@@ -35,17 +35,19 @@ allprojects {
     }
 }
 
-tasks.withType<Detekt>().configureEach {
-    reports {
-        html.required.set(true)
-        html.outputLocation.set(file("build/reports/detekt.html"))
+tasks {
+    withType<Detekt>().configureEach {
+        reports {
+            html.required.set(true)
+            html.outputLocation.set(file("build/reports/detekt.html"))
+        }
     }
-}
 
-tasks.register("clean", Delete::class.java) {
-    delete(rootProject.buildDir)
-}
+    register("clean", Delete::class.java) {
+        delete(rootProject.layout.buildDirectory)
+    }
 
-tasks.wrapper {
-    distributionType = Wrapper.DistributionType.ALL
+    wrapper {
+        distributionType = Wrapper.DistributionType.ALL
+    }
 }

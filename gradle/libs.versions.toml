@@ -14,3 +14,4 @@ versionCheck = { id = "com.github.ben-manes.versions", version.ref = "versionChe
 
 [libraries]
 junit = "junit:junit:4.13.2"
+schemaRegistryClient = "io.confluent:kafka-schema-registry-client:7.5.1"

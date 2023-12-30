@@ -9,6 +9,9 @@ dependencyResolutionManagement {
     repositories {
         mavenCentral()
         google()
+        maven {
+            url = uri("https://packages.confluent.io/maven")
+        }
     }
 }
 
@@ -25,7 +28,7 @@ gradleEnterprise {
     }
 }
 
-rootProject.name = "kotlin-gradle-plugin-template"
+rootProject.name = "avroschema-wizard-plugin"
 
 include(":example")
 includeBuild("plugin-build")

@@ -9,6 +9,9 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        maven {
+            url = uri("https://packages.confluent.io/maven")
+        }
     }
 
     versionCatalogs {
@@ -31,6 +34,6 @@ gradleEnterprise {
     }
 }
 
-rootProject.name = ("com.ncorti.kotlin.gradle.template")
+rootProject.name = ("plugin-build")
 
 include(":plugin")

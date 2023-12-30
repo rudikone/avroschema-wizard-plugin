@@ -32,40 +32,42 @@ subprojects {
     }
 }
 
-tasks.withType<Detekt>().configureEach {
-    reports {
-        html.required.set(true)
-        html.outputLocation.set(file("build/reports/detekt.html"))
+tasks {
+    withType<Detekt>().configureEach {
+        reports {
+            html.required.set(true)
+            html.outputLocation.set(file("build/reports/detekt.html"))
+        }
     }
-}
 
-tasks.withType<DependencyUpdatesTask> {
-    rejectVersionIf {
-        candidate.version.isNonStable()
+    withType<DependencyUpdatesTask> {
+        rejectVersionIf {
+            candidate.version.isNonStable()
+        }
+    }
+
+    register("clean", Delete::class.java) {
+        delete(rootProject.layout.buildDirectory)
+    }
+
+    register("reformatAll") {
+        description = "Reformat all the Kotlin Code"
+
+        dependsOn("ktlintFormat")
+        dependsOn(gradle.includedBuild("plugin-build").task(":plugin:ktlintFormat"))
+    }
+
+    register("preMerge") {
+        description = "Runs all the tests/verification tasks on both top level and included build."
+
+        dependsOn(":example:check")
+        dependsOn(gradle.includedBuild("plugin-build").task(":plugin:check"))
+        dependsOn(gradle.includedBuild("plugin-build").task(":plugin:validatePlugins"))
+    }
+
+    wrapper {
+        distributionType = Wrapper.DistributionType.ALL
     }
 }
 
 fun String.isNonStable() = "^[0-9,.v-]+(-r)?$".toRegex().matches(this).not()
-
-tasks.register("clean", Delete::class.java) {
-    delete(rootProject.buildDir)
-}
-
-tasks.register("reformatAll") {
-    description = "Reformat all the Kotlin Code"
-
-    dependsOn("ktlintFormat")
-    dependsOn(gradle.includedBuild("plugin-build").task(":plugin:ktlintFormat"))
-}
-
-tasks.register("preMerge") {
-    description = "Runs all the tests/verification tasks on both top level and included build."
-
-    dependsOn(":example:check")
-    dependsOn(gradle.includedBuild("plugin-build").task(":plugin:check"))
-    dependsOn(gradle.includedBuild("plugin-build").task(":plugin:validatePlugins"))
-}
-
-tasks.wrapper {
-    distributionType = Wrapper.DistributionType.ALL
-}
