@@ -56,13 +56,14 @@ abstract class RegisterTask : DefaultTask() {
         }
     }
 
-    private fun findAvroFileByName(searchPath: String, schemaName: String) =
-        Files.walk(Paths.get(searchPath)).use {
-            it.filter { file -> file.isRegularFile() && file.fileName.toString() == "$schemaName.avsc" }
-                .findFirst()
-                .getOrNull()
-                ?.toFile()
-                ?: error("File $schemaName.avsc not found!")
-        }
-
+    private fun findAvroFileByName(
+        searchPath: String,
+        schemaName: String,
+    ) = Files.walk(Paths.get(searchPath)).use {
+        it.filter { file -> file.isRegularFile() && file.fileName.toString() == "$schemaName.avsc" }
+            .findFirst()
+            .getOrNull()
+            ?.toFile()
+            ?: error("File $schemaName.avsc not found!")
+    }
 }

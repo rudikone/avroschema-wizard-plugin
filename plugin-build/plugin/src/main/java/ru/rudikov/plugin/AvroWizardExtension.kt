@@ -10,16 +10,17 @@ const val DEFAULT_SCHEMA_REGISTRY_URL = "http://localhost:10081"
 
 @Suppress("UnnecessaryAbstractClass")
 abstract class AvroWizardExtension
-@Inject
-constructor(project: Project) {
-    private val objects = project.objects
+    @Inject
+    constructor(project: Project) {
+        private val objects = project.objects
 
-    val schemaRegistryUrl: Property<String> = objects.property(String::class.java)
-        .convention(DEFAULT_SCHEMA_REGISTRY_URL)
+        val schemaRegistryUrl: Property<String> =
+            objects.property(String::class.java).convention(DEFAULT_SCHEMA_REGISTRY_URL)
 
-    val searchAvroFilesPaths: SetProperty<String> = objects.setProperty(String::class.java).convention(
-        setOf("${project.layout.buildDirectory}")
-    )
+        val searchAvroFilesPaths: SetProperty<String> =
+            objects.setProperty(String::class.java)
+                .convention(setOf(project.layout.buildDirectory.get().asFile.absolutePath))
 
-    val subjectToSchema: MapProperty<String, String> = objects.mapProperty(String::class.java, String::class.java)
-}
+        val subjectToSchema: MapProperty<String, String> =
+            objects.mapProperty(String::class.java, String::class.java)
+    }
