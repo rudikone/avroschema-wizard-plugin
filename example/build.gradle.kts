@@ -4,5 +4,7 @@ plugins {
 }
 
 avroWizardConfig {
-    subjectToSchema = mapOf("my-topic" to "Schema")
+    schemaRegistryUrl = "http://localhost:8081"
+    searchAvroFilesPaths = setOf("$projectDir/src/main/resources")
+    subjectToSchema = mapOf("my-topic" to "Example")
 }
