@@ -11,9 +11,9 @@ import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.TaskAction
 
-abstract class RegisterTask : DefaultTask() {
+abstract class CompatibilityCheckTask : DefaultTask() {
     init {
-        description = "Register all schemas"
+        description = "Test compatibility of a schema with the latest schema under subject"
         group = "other"
     }
 
@@ -29,7 +29,7 @@ abstract class RegisterTask : DefaultTask() {
     abstract val subjectToSchema: MapProperty<String, String>
 
     @TaskAction
-    fun registerAllSchemas() {
+    fun checkCompatibility() {
         if (subjectToSchema.orNull.isNullOrEmpty()) {
             error("No schema has been announced!")
         }
@@ -42,11 +42,17 @@ abstract class RegisterTask : DefaultTask() {
                     val avroFile = findAvroFileByName(searchPath = searchPath, schemaName = schemaName)
                     val schema = AvroSchema(Schema.Parser().parse(avroFile))
 
-                    client.register(subject, schema)
-                }.onSuccess {
-                    logger.lifecycle(it.toString())
+                    client.testCompatibility(subject, schema)
+                }.onSuccess { isCompatible ->
+                    if (isCompatible) {
+                        val msg = "Schema $schemaName is compatible with the latest schema under subject $subject"
+                        logger.lifecycle(msg)
+                    } else {
+                        val msg = "Schema $schemaName is not compatible with the latest schema under subject $subject"
+                        logger.lifecycle(msg)
+                    }
                 }.onFailure {
-                    logger.warn("Failed register $schemaName for $subject!", it)
+                    logger.warn("Compatibility test failure!", it)
                 }
             }
         }
