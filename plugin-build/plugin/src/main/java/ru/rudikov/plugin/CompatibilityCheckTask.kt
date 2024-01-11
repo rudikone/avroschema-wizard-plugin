@@ -36,14 +36,14 @@ abstract class CompatibilityCheckTask : DefaultTask() {
 
         val client = CachedSchemaRegistryClient(schemaRegistryUrl.get(), subjectToSchema.get().entries.size)
 
-        subjectToSchema.get().forEach { (subject, schemaName) ->
-            searchAvroFilesPaths.get().forEach { searchPath ->
-                runCatching {
+        runCatching {
+            subjectToSchema.get().forEach { (subject, schemaName) ->
+                searchAvroFilesPaths.get().forEach { searchPath ->
                     val avroFile = findAvroFileByName(searchPath = searchPath, schemaName = schemaName)
                     val schema = AvroSchema(Schema.Parser().parse(avroFile))
 
-                    client.testCompatibility(subject, schema)
-                }.onSuccess { isCompatible ->
+                    val isCompatible = client.testCompatibility(subject, schema)
+
                     if (isCompatible) {
                         val msg = "Schema $schemaName is compatible with the latest schema under subject $subject"
                         logger.lifecycle(msg)
@@ -51,10 +51,10 @@ abstract class CompatibilityCheckTask : DefaultTask() {
                         val msg = "Schema $schemaName is not compatible with the latest schema under subject $subject"
                         logger.lifecycle(msg)
                     }
-                }.onFailure {
-                    logger.warn("Compatibility test failure!", it)
                 }
             }
+        }.onFailure {
+            logger.error("Compatibility test failure!", it)
         }
     }
 }
