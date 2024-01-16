@@ -4,6 +4,8 @@ kotlin = "1.9.22"
 ktlintGradle = "12.0.3"
 pluginPublish = "1.2.1"
 versionCheck = "0.50.0"
+junit = "4.13.2"
+schemaRegistryClient = "7.5.1"
 
 [plugins]
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt"}
@@ -13,5 +15,5 @@ pluginPublish = { id = "com.gradle.plugin-publish", version.ref = "pluginPublish
 versionCheck = { id = "com.github.ben-manes.versions", version.ref = "versionCheck"}
 
 [libraries]
-junit = "junit:junit:4.13.2"
-schemaRegistryClient = "io.confluent:kafka-schema-registry-client:7.5.1"
+junit = { module = "junit:junit", version.ref = "junit" }
+schemaRegistryClient = { module = "io.confluent:kafka-schema-registry-client", version.ref = "schemaRegistryClient"}
