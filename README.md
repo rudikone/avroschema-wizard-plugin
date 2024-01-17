@@ -31,6 +31,7 @@ avroWizardConfig {
     subjectToSchema = mapOf("some-topic-1" to "SomeSchemaName1", "some-topic-2" to "SomeSchemaName2")
 }
 ```
+### Register schemas:
 
 run
 ```
@@ -40,6 +41,36 @@ gradle registerAllSchemas
 The task will search for files with extension .avsc, whose names (without extension) are passed as __subjectToSchema__
 map values, in the directories passed to __searchAvroFilesPaths__, and register schemas by the corresponding subjects
 passed as __subjectToSchema__ map keys.
+
+***Output***: list of registered scheme ids
+
+### Compatibility check:
+
+run
+```
+gradle checkCompatibility
+```
+
+The task will search for files with extension .avsc, whose names (without extension) are passed as __subjectToSchema__
+map values, in the directories passed to __searchAvroFilesPaths__, and check the compatibility of the new versions of
+the schemas by the corresponding subjects passed as __subjectToSchema__ map keys.
+
+***If the subject does not exist, an error will be thrown!***
+
+***Output***: Schema <schema_name> is (not) compatible with the latest schema under subject <subject_name>
+
+### Properties:
+
+| Name                 | Description                                                  | Default value                  |
+|----------------------|--------------------------------------------------------------|--------------------------------|
+| schemaRegistryUrl    | Schema registry URL                                          | "http://localhost:10081"       |
+| searchAvroFilesPaths | List of directories to search for files with extension .avcs | build directory of the project |
+| subjectToSchema      | Subject (topic) to schema name map                           | -                              |
+
+### Example:
+
+See [example](example/build.gradle.kts) module. Run [docker-compose](example/docker-compose.yaml), testing plugin tasks.
+For convenience, you can use schema-registry-ui (http://localhost:8002/ in your browser).
 
 
 ## Contributing 🤝
