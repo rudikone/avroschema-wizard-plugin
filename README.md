@@ -22,7 +22,7 @@ Features:
 build.gradle.kts:
 ```
 plugins {
-    id("io.rudikov.avroschema-wizard-plugin") version <version>
+    id("io.github.rudikov.avroschema-wizard-plugin") version <version>
 }
 
 avroWizardConfig {

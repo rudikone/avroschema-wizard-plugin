@@ -1,4 +1,4 @@
-package io.rudikov.plugin
+package io.github.rudikov.plugin
 
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient

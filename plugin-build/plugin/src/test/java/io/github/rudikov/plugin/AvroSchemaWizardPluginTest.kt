@@ -1,4 +1,4 @@
-package io.rudikov.plugin
+package io.github.rudikov.plugin
 
 import org.gradle.testfixtures.ProjectBuilder
 import org.junit.Assert.assertEquals
@@ -102,6 +102,6 @@ class AvroSchemaWizardPluginTest {
     }
 
     companion object {
-        private const val PLUGIN_ID = "io.rudikov.avroschema-wizard-plugin"
+        private const val PLUGIN_ID = "io.github.rudikov.avroschema-wizard-plugin"
     }
 }
