@@ -22,7 +22,7 @@ Features:
 build.gradle.kts:
 ```
 plugins {
-    id("ru.rudikov.avroschema-wizard-plugin") version <version>
+    id("io.rudikov.avroschema-wizard-plugin") version <version>
 }
 
 avroWizardConfig {
@@ -54,6 +54,17 @@ gradle checkCompatibility
 The task will search for files with extension .avsc, whose names (without extension) are passed as __subjectToSchema__
 map values, in the directories passed to __searchAvroFilesPaths__, and check the compatibility of the new versions of
 the schemas by the corresponding subjects passed as __subjectToSchema__ map keys.
+
+OR
+
+run
+```
+gradle checkCompatibility --topic=<topic-name> --schema=<schema-name>
+```
+
+The task will search for a file with the extension .avsc, whose name (without extension) is passed as a command line
+argument (schema), in the directories given in __searchAvroFilesPaths__, and check if the passed schema is compatible
+with the schema under the subject passed as a command line argument (topic).
 
 ***If the subject does not exist, an error will be thrown!***
 

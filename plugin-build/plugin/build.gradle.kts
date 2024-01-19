@@ -14,7 +14,7 @@ gradlePlugin {
             version = property("VERSION").toString()
             description = property("DESCRIPTION").toString()
             displayName = property("DISPLAY_NAME").toString()
-            tags.set(listOf("plugin", "gradle"))
+            tags.set(listOf("avro", "schema-registry"))
         }
     }
 

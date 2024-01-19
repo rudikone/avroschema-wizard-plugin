@@ -1,4 +1,4 @@
-package ru.rudikov.plugin
+package io.rudikov.plugin
 
 import org.gradle.api.Project
 import org.gradle.api.provider.MapProperty
