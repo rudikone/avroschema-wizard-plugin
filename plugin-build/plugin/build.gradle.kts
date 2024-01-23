@@ -1,9 +1,11 @@
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm")
     `java-gradle-plugin`
     alias(libs.plugins.pluginPublish)
+    alias(libs.plugins.shadow)
 }
 
 gradlePlugin {
@@ -54,5 +56,10 @@ tasks {
             System.setProperty("gradle.publish.key", key)
             System.setProperty("gradle.publish.secret", secret)
         }
+    }
+
+    named("shadowJar", ShadowJar::class) {
+        isEnableRelocation = true
+        archiveClassifier.set("")
     }
 }

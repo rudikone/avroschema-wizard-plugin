@@ -42,7 +42,7 @@ The task will search for files with extension .avsc, whose names (without extens
 map values, in the directories passed to __searchAvroFilesPaths__, and register schemas by the corresponding subjects
 passed as __subjectToSchema__ map keys.
 
-***Output***: list of registered scheme ids
+***Output***: <schema_name>: <id_from_registry>
 
 ### Compatibility check:
 

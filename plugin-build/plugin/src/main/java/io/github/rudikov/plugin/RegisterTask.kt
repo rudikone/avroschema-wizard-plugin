@@ -44,7 +44,7 @@ abstract class RegisterTask : DefaultTask() {
 
                     client.register(subject, schema)
                 }.onSuccess {
-                    logger.lifecycle(it.toString())
+                    logger.lifecycle("$schemaName: $it")
                 }.onFailure {
                     logger.warn("Failed register $schemaName for $subject!", it)
                 }
