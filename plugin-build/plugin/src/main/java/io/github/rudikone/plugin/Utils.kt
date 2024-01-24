@@ -1,4 +1,4 @@
-package io.github.rudikov.plugin
+package io.github.rudikone.plugin
 
 import java.nio.file.Files
 import java.nio.file.Paths

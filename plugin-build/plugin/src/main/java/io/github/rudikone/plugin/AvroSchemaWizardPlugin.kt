@@ -1,4 +1,4 @@
-package io.github.rudikov.plugin
+package io.github.rudikone.plugin
 
 import org.gradle.api.Plugin
 import org.gradle.api.Project

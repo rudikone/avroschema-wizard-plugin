@@ -1,6 +1,6 @@
 plugins {
     java
-    id("io.github.rudikov.avroschema-wizard-plugin")
+    id("io.github.rudikone.avroschema-wizard-plugin")
 }
 
 avroWizardConfig {
