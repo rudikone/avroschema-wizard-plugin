@@ -61,5 +61,8 @@ tasks {
     named("shadowJar", ShadowJar::class) {
         isEnableRelocation = true
         archiveClassifier.set("")
+        manifest {
+            attributes["Main-Class"] = "io.github.rudikone.plugin.AvroSchemaWizardPluginKt"
+        }
     }
 }
