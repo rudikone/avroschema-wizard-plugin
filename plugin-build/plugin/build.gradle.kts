@@ -6,6 +6,7 @@ plugins {
     `java-gradle-plugin`
     alias(libs.plugins.pluginPublish)
     alias(libs.plugins.shadow)
+    java
 }
 
 gradlePlugin {
@@ -26,7 +27,7 @@ gradlePlugin {
 
 dependencies {
     implementation(kotlin("stdlib"))
-    implementation(gradleApi())
+    shadow(gradleApi())
     implementation(libs.schemaRegistryClient)
 
     testImplementation(libs.junit)
@@ -59,7 +60,6 @@ tasks {
     }
 
     named("shadowJar", ShadowJar::class) {
-        isEnableRelocation = true
         archiveClassifier.set("")
         manifest {
             attributes["Main-Class"] = "io.github.rudikone.plugin.AvroSchemaWizardPluginKt"

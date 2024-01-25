@@ -6,7 +6,6 @@ plugins {
     alias(libs.plugins.detekt)
     alias(libs.plugins.ktlint)
     alias(libs.plugins.versionCheck)
-    alias(libs.plugins.shadow) apply false // https://github.com/johnrengelman/shadow?tab=readme-ov-file
 }
 
 allprojects {
