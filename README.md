@@ -1,6 +1,8 @@
 # Avroschema-wizard-plugin (Gradle) 🐘
 
-[![License](https://img.shields.io/github/license/cortinico/kotlin-android-template.svg)](LICENSE) ![Language](https://img.shields.io/github/languages/top/cortinico/kotlin-android-template?color=blue&logo=kotlin)
+[![License](https://img.shields.io/github/license/cortinico/kotlin-android-template.svg)](LICENSE)
+![Language](https://img.shields.io/github/languages/top/cortinico/kotlin-android-template?color=blue&logo=kotlin)
+[![Download](https://img.shields.io/gradle-plugin-portal/v/io.github.rudikone.avroschema-wizard-plugin)](https://plugins.gradle.org/plugin/https://img.shields.io/gradle-plugin-portal/v/io.github.rudikone.avroschema-wizard-plugin)
 
 Plugin to interact with schema-registry using [API Schema registry](https://docs.confluent.io/platform/current/schema-registry/develop/api.html).
 
