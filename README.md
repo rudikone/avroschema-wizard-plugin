@@ -6,7 +6,7 @@ Plugin to interact with schema-registry using [API Schema registry](https://docs
 
 ## License 📄
 
-This plugin is licensed under the MIT License - see the [License](License) file for details.
+This plugin is licensed under the MIT License - see the [License](LICENSE) file for details.
 
 ## Use cases
 
@@ -43,6 +43,10 @@ map values, in the directories passed to __searchAvroFilesPaths__, and register 
 passed as __subjectToSchema__ map keys.
 
 ***Output***: <schema_name>: <id_from_registry>
+
+***If a schema with the same name is registered under multiple subjects, the id will be assigned to it once.
+See [Documentation](https://docs.confluent.io/platform/current/schema-registry/develop/using.html#register-an-existing-schema-to-a-new-subject-name)***
+
 
 ### Compatibility check:
 
