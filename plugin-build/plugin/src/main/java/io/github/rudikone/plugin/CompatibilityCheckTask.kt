@@ -58,7 +58,7 @@ abstract class CompatibilityCheckTask : DefaultTask() {
         val schemaName = schemaForCheck.get()
         val subject = topic.get()
 
-        test(client = client, subject = subject, schemaName = schemaName)
+        client.use { test(client = it, subject = subject, schemaName = schemaName) }
     }
 
     private fun checkForAllSchemas() {
@@ -66,10 +66,12 @@ abstract class CompatibilityCheckTask : DefaultTask() {
             error("No schema has been announced!")
         }
 
-        val client = CachedSchemaRegistryClient(schemaRegistryUrl.get(), subjectToSchema.get().entries.size)
+        val registryClient = CachedSchemaRegistryClient(schemaRegistryUrl.get(), subjectToSchema.get().entries.size)
 
-        subjectToSchema.get().forEach { (subject, schemaName) ->
-            test(client = client, subject = subject, schemaName = schemaName)
+        registryClient.use { client ->
+            subjectToSchema.get().forEach { (subject, schemaName) ->
+                test(client = client, subject = subject, schemaName = schemaName)
+            }
         }
     }
 

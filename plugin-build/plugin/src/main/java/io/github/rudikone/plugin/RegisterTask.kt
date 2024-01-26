@@ -34,19 +34,21 @@ abstract class RegisterTask : DefaultTask() {
             error("No schema has been announced!")
         }
 
-        val client = CachedSchemaRegistryClient(schemaRegistryUrl.get(), subjectToSchema.get().entries.size)
+        val registryClient = CachedSchemaRegistryClient(schemaRegistryUrl.get(), subjectToSchema.get().entries.size)
 
-        subjectToSchema.get().forEach { (subject, schemaName) ->
-            searchAvroFilesPaths.get().forEach { searchPath ->
-                runCatching {
-                    val avroFile = findAvroFileByName(searchPath = searchPath, schemaName = schemaName)
-                    val schema = AvroSchema(Schema.Parser().parse(avroFile))
+        registryClient.use { client ->
+            subjectToSchema.get().forEach { (subject, schemaName) ->
+                searchAvroFilesPaths.get().forEach { searchPath ->
+                    runCatching {
+                        val avroFile = findAvroFileByName(searchPath = searchPath, schemaName = schemaName)
+                        val schema = AvroSchema(Schema.Parser().parse(avroFile))
 
-                    client.register(subject, schema)
-                }.onSuccess {
-                    logger.lifecycle("$schemaName: $it")
-                }.onFailure {
-                    logger.warn("Failed register $schemaName for $subject!", it)
+                        client.register(subject, schema)
+                    }.onSuccess {
+                        logger.lifecycle("$schemaName: $it")
+                    }.onFailure {
+                        logger.warn("Failed register $schemaName for $subject!", it)
+                    }
                 }
             }
         }
