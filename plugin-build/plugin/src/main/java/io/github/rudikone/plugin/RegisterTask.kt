@@ -38,17 +38,16 @@ abstract class RegisterTask : DefaultTask() {
 
         registryClient.use { client ->
             subjectToSchema.get().forEach { (subject, schemaName) ->
-                searchAvroFilesPaths.get().forEach { searchPath ->
-                    runCatching {
-                        val avroFile = findAvroFileByName(searchPath = searchPath, schemaName = schemaName)
-                        val schema = AvroSchema(Schema.Parser().parse(avroFile))
+                runCatching {
+                    val searchPaths = searchAvroFilesPaths.get()
+                    val avroFile = findAvroFileByName(searchPaths = searchPaths, schemaName = schemaName)
+                    val schema = AvroSchema(Schema.Parser().parse(avroFile))
 
-                        client.register(subject, schema)
-                    }.onSuccess {
-                        logger.lifecycle("$schemaName: $it")
-                    }.onFailure {
-                        logger.warn("Failed register $schemaName for $subject!", it)
-                    }
+                    client.register(subject, schema)
+                }.onSuccess {
+                    logger.lifecycle("$schemaName: $it")
+                }.onFailure {
+                    logger.warn("Failed register $schemaName for $subject!", it)
                 }
             }
         }

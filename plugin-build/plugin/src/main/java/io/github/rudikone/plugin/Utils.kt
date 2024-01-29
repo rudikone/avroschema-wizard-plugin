@@ -1,17 +1,28 @@
 package io.github.rudikone.plugin
 
+import java.io.File
 import java.nio.file.Files
 import java.nio.file.Paths
 import kotlin.io.path.isRegularFile
 import kotlin.jvm.optionals.getOrNull
 
 fun findAvroFileByName(
-    searchPath: String,
+    searchPaths: Set<String>,
     schemaName: String,
-) = Files.walk(Paths.get(searchPath)).use {
-    it.filter { file -> file.isRegularFile() && file.fileName.toString() == "$schemaName.avsc" }
-        .findFirst()
-        .getOrNull()
-        ?.toFile()
-        ?: error("File $schemaName.avsc not found!")
+): File {
+    var file: File? = null
+
+    searchPaths.forEach { path ->
+        if (file == null) {
+            file =
+                Files.walk(Paths.get(path)).use {
+                    it.filter { file -> file.isRegularFile() && file.fileName.toString() == "$schemaName.avsc" }
+                        .findFirst()
+                        .getOrNull()
+                        ?.toFile()
+                }
+        }
+    }
+
+    return file ?: error("File $schemaName.avsc not found!")
 }

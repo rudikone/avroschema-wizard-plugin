@@ -80,19 +80,17 @@ abstract class CompatibilityCheckTask : DefaultTask() {
         subject: String,
         schemaName: String,
     ) {
-        searchAvroFilesPaths.get().forEach { searchPath ->
-            val avroFile = findAvroFileByName(searchPath = searchPath, schemaName = schemaName)
-            val schema = AvroSchema(Schema.Parser().parse(avroFile))
+        val avroFile = findAvroFileByName(searchPaths = searchAvroFilesPaths.get(), schemaName = schemaName)
+        val schema = AvroSchema(Schema.Parser().parse(avroFile))
 
-            val isCompatible = client.testCompatibility(subject, schema)
+        val isCompatible = client.testCompatibility(subject, schema)
 
-            if (isCompatible) {
-                val msg = "Schema $schemaName is compatible with the latest schema under subject $subject"
-                logger.lifecycle(msg)
-            } else {
-                val msg = "Schema $schemaName is not compatible with the latest schema under subject $subject"
-                logger.lifecycle(msg)
-            }
+        if (isCompatible) {
+            val msg = "Schema $schemaName is compatible with the latest schema under subject $subject"
+            logger.lifecycle(msg)
+        } else {
+            val msg = "Schema $schemaName is not compatible with the latest schema under subject $subject"
+            logger.lifecycle(msg)
         }
     }
 }
