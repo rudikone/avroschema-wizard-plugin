@@ -6,6 +6,8 @@
 
 Plugin to interact with schema-registry using [API Schema registry](https://docs.confluent.io/platform/current/schema-registry/develop/api.html).
 
+Simplify schema registration under specific subjects (topic names) and conduct seamless compatibility checks. This plugin streamlines the integration of Avro schemas, enhancing your local testing process and ensuring smooth execution in integration tests and CI pipelines. Use it now to effortlessly manage enrollment and schema validation in your Kafka ecosystem!
+
 ## License 📄
 
 This plugin is licensed under the MIT License - see the [License](LICENSE) file for details.
