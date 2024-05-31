@@ -14,13 +14,15 @@ abstract class AvroSchemaWizardPlugin : Plugin<Project> {
         project.tasks.register(REGISTER_TASK_NAME, RegisterTask::class.java) {
             it.schemaRegistryUrl.set(extension.schemaRegistryUrl)
             it.searchAvroFilesPaths.set(extension.searchAvroFilesPaths)
-            it.subjectToSchema.set(extension.subjectToSchema)
+            it.topicToSchema.set(extension.topicToSchema)
+            it.subjectNameStrategy.set(extension.subjectNameStrategy)
         }
 
         project.tasks.register(COMPATIBILITY_CHECK_TASK_NAME, CompatibilityCheckTask::class.java) {
             it.schemaRegistryUrl.set(extension.schemaRegistryUrl)
             it.searchAvroFilesPaths.set(extension.searchAvroFilesPaths)
-            it.subjectToSchema.set(extension.subjectToSchema)
+            it.topicToSchema.set(extension.topicToSchema)
+            it.subjectNameStrategy.set(extension.subjectNameStrategy)
         }
     }
 }

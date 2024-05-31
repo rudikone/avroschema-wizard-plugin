@@ -2,6 +2,9 @@ package io.github.rudikone.plugin
 
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient
+import io.confluent.kafka.serializers.subject.RecordNameStrategy
+import io.confluent.kafka.serializers.subject.TopicNameStrategy
+import io.confluent.kafka.serializers.subject.TopicRecordNameStrategy
 import org.apache.avro.Schema
 import org.gradle.api.DefaultTask
 import org.gradle.api.provider.MapProperty
@@ -26,28 +29,45 @@ abstract class RegisterTask : DefaultTask() {
     abstract val searchAvroFilesPaths: SetProperty<String>
 
     @get:Input
-    abstract val subjectToSchema: MapProperty<String, String>
+    abstract val topicToSchema: MapProperty<String, String>
+
+    @get:Input
+    @get:Optional
+    abstract val subjectNameStrategy: Property<String>
 
     @TaskAction
     fun registerAllSchemas() {
-        if (subjectToSchema.orNull.isNullOrEmpty()) {
+        if (topicToSchema.orNull.isNullOrEmpty()) {
             error("No schema has been announced!")
         }
 
-        val registryClient = CachedSchemaRegistryClient(schemaRegistryUrl.get(), subjectToSchema.get().entries.size)
+        val nameStrategyEnum =
+            SubjectNameStrategies.from(subjectNameStrategy.get())
+                ?: error("Unsupported subject name strategy! Allowed values: ${SubjectNameStrategies.values()}")
+
+        val nameStrategy =
+            when (nameStrategyEnum) {
+                SubjectNameStrategies.TopicNameStrategy -> TopicNameStrategy()
+                SubjectNameStrategies.RecordNameStrategy -> RecordNameStrategy()
+                SubjectNameStrategies.TopicRecordNameStrategy -> TopicRecordNameStrategy()
+            }
+
+        val registryClient = CachedSchemaRegistryClient(schemaRegistryUrl.get(), topicToSchema.get().entries.size)
 
         registryClient.use { client ->
-            subjectToSchema.get().forEach { (subject, schemaName) ->
+            topicToSchema.get().forEach { (topic, schemaName) ->
                 runCatching {
                     val searchPaths = searchAvroFilesPaths.get()
                     val avroFile = findAvroFileByName(searchPaths = searchPaths, schemaName = schemaName)
                     val schema = AvroSchema(Schema.Parser().parse(avroFile))
 
+                    val subject = nameStrategy.subjectName(topic, false, schema)
+
                     client.register(subject, schema)
                 }.onSuccess {
-                    logger.lifecycle("$schemaName: $it")
+                    logger.lifecycle("Registered $schemaName with id: $it for $topic")
                 }.onFailure {
-                    logger.warn("Failed register $schemaName for $subject!", it)
+                    logger.warn("Failed register $schemaName for $topic!", it)
                 }
             }
         }

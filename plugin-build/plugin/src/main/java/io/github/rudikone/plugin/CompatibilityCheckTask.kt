@@ -3,6 +3,9 @@ package io.github.rudikone.plugin
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
+import io.confluent.kafka.serializers.subject.RecordNameStrategy
+import io.confluent.kafka.serializers.subject.TopicNameStrategy
+import io.confluent.kafka.serializers.subject.TopicRecordNameStrategy
 import org.apache.avro.Schema
 import org.gradle.api.DefaultTask
 import org.gradle.api.provider.MapProperty
@@ -21,8 +24,8 @@ abstract class CompatibilityCheckTask : DefaultTask() {
 
     @get:Input
     @get:Optional
-    @get:Option(option = "topic", description = "A topic, under which lies the schema to be tested")
-    abstract val topic: Property<String>
+    @get:Option(option = "subject", description = "A subject, under which lies the schema to be tested")
+    abstract val subject: Property<String>
 
     @get:Input
     @get:Optional
@@ -38,12 +41,16 @@ abstract class CompatibilityCheckTask : DefaultTask() {
     abstract val searchAvroFilesPaths: SetProperty<String>
 
     @get:Input
-    abstract val subjectToSchema: MapProperty<String, String>
+    abstract val topicToSchema: MapProperty<String, String>
+
+    @get:Input
+    @get:Optional
+    abstract val subjectNameStrategy: Property<String>
 
     @TaskAction
     fun checkCompatibility() {
         runCatching {
-            if (topic.isPresent && schemaForCheck.isPresent) {
+            if (subject.isPresent && schemaForCheck.isPresent) {
                 check()
             } else {
                 checkForAllSchemas()
@@ -56,26 +63,58 @@ abstract class CompatibilityCheckTask : DefaultTask() {
     private fun check() {
         val client = CachedSchemaRegistryClient(schemaRegistryUrl.get(), 1)
         val schemaName = schemaForCheck.get()
-        val subject = topic.get()
+        val subject = subject.get()
 
-        client.use { test(client = it, subject = subject, schemaName = schemaName) }
+        client.use { testForSubject(client = it, subject = subject, schemaName = schemaName) }
     }
 
     private fun checkForAllSchemas() {
-        if (subjectToSchema.orNull.isNullOrEmpty()) {
+        if (topicToSchema.orNull.isNullOrEmpty()) {
             error("No schema has been announced!")
         }
 
-        val registryClient = CachedSchemaRegistryClient(schemaRegistryUrl.get(), subjectToSchema.get().entries.size)
+        val registryClient = CachedSchemaRegistryClient(schemaRegistryUrl.get(), topicToSchema.get().entries.size)
 
         registryClient.use { client ->
-            subjectToSchema.get().forEach { (subject, schemaName) ->
-                test(client = client, subject = subject, schemaName = schemaName)
+            topicToSchema.get().forEach { (topic, schemaName) ->
+                test(client = client, topic = topic, schemaName = schemaName)
             }
         }
     }
 
     private fun test(
+        client: SchemaRegistryClient,
+        topic: String,
+        schemaName: String,
+    ) {
+        val avroFile = findAvroFileByName(searchPaths = searchAvroFilesPaths.get(), schemaName = schemaName)
+        val schema = AvroSchema(Schema.Parser().parse(avroFile))
+
+        val nameStrategyEnum =
+            SubjectNameStrategies.from(subjectNameStrategy.get())
+                ?: error("Unsupported subject name strategy! Allowed values: ${SubjectNameStrategies.values()}")
+
+        val nameStrategy =
+            when (nameStrategyEnum) {
+                SubjectNameStrategies.TopicNameStrategy -> TopicNameStrategy()
+                SubjectNameStrategies.RecordNameStrategy -> RecordNameStrategy()
+                SubjectNameStrategies.TopicRecordNameStrategy -> TopicRecordNameStrategy()
+            }
+
+        val subject = nameStrategy.subjectName(topic, false, schema)
+
+        val isCompatible = client.testCompatibility(subject, schema)
+
+        if (isCompatible) {
+            val msg = "Schema $schemaName is compatible with the latest schema under subject $subject"
+            logger.lifecycle(msg)
+        } else {
+            val msg = "Schema $schemaName is not compatible with the latest schema under subject $subject"
+            logger.lifecycle(msg)
+        }
+    }
+
+    private fun testForSubject(
         client: SchemaRegistryClient,
         subject: String,
         schemaName: String,

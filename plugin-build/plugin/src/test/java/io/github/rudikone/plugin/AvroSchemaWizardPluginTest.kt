@@ -30,19 +30,22 @@ class AvroSchemaWizardPluginTest {
 
         val schemaRegistryUrl = "some_url"
         val searchAvroFilesPaths = setOf("some_path")
-        val subjectToSchema = mapOf("some_subject" to "some_schema")
+        val topicToSchema = mapOf("some_topic" to "some_schema")
+        val subjectNameStrategy = SubjectNameStrategies.RecordNameStrategy.name
 
         (project.extensions.getByName(EXTENSION_NAME) as AvroWizardExtension).apply {
             this.schemaRegistryUrl.set(schemaRegistryUrl)
             this.searchAvroFilesPaths.set(searchAvroFilesPaths)
-            this.subjectToSchema.set(subjectToSchema)
+            this.topicToSchema.set(topicToSchema)
+            this.subjectNameStrategy.set(subjectNameStrategy)
         }
 
         val task = project.tasks.getByName(REGISTER_TASK_NAME) as RegisterTask
 
         assertEquals(schemaRegistryUrl, task.schemaRegistryUrl.get())
         assertEquals(searchAvroFilesPaths, task.searchAvroFilesPaths.get())
-        assertEquals(subjectToSchema, task.subjectToSchema.get())
+        assertEquals(topicToSchema, task.topicToSchema.get())
+        assertEquals(subjectNameStrategy, task.subjectNameStrategy.get())
     }
 
     @Test
@@ -52,19 +55,22 @@ class AvroSchemaWizardPluginTest {
 
         val schemaRegistryUrl = "some_url"
         val searchAvroFilesPaths = setOf("some_path")
-        val subjectToSchema = mapOf("some_subject" to "some_schema")
+        val topicToSchema = mapOf("some_topic" to "some_schema")
+        val subjectNameStrategy = SubjectNameStrategies.RecordNameStrategy.name
 
         (project.extensions.getByName(EXTENSION_NAME) as AvroWizardExtension).apply {
             this.schemaRegistryUrl.set(schemaRegistryUrl)
             this.searchAvroFilesPaths.set(searchAvroFilesPaths)
-            this.subjectToSchema.set(subjectToSchema)
+            this.topicToSchema.set(topicToSchema)
+            this.subjectNameStrategy.set(subjectNameStrategy)
         }
 
         val task = project.tasks.getByName(COMPATIBILITY_CHECK_TASK_NAME) as CompatibilityCheckTask
 
         assertEquals(schemaRegistryUrl, task.schemaRegistryUrl.get())
         assertEquals(searchAvroFilesPaths, task.searchAvroFilesPaths.get())
-        assertEquals(subjectToSchema, task.subjectToSchema.get())
+        assertEquals(topicToSchema, task.topicToSchema.get())
+        assertEquals(subjectNameStrategy, task.subjectNameStrategy.get())
     }
 
     @Test
@@ -72,15 +78,16 @@ class AvroSchemaWizardPluginTest {
         val project = ProjectBuilder.builder().build()
         project.pluginManager.apply(PLUGIN_ID)
 
-        val subjectToSchema = mapOf("some_subject" to "some_schema")
+        val topicToSchema = mapOf("some_topic" to "some_schema")
 
         (project.extensions.getByName(EXTENSION_NAME) as AvroWizardExtension).apply {
-            this.subjectToSchema.set(subjectToSchema)
+            this.topicToSchema.set(topicToSchema)
         }
 
         val task = project.tasks.getByName(REGISTER_TASK_NAME) as RegisterTask
 
         assertEquals(DEFAULT_SCHEMA_REGISTRY_URL, task.schemaRegistryUrl.get())
+        assertEquals(DEFAULT_SUBJECT_NAME_STRATEGY, task.subjectNameStrategy.get())
         assertEquals(setOf(project.layout.buildDirectory.get().asFile.absolutePath), task.searchAvroFilesPaths.get())
     }
 
@@ -89,15 +96,16 @@ class AvroSchemaWizardPluginTest {
         val project = ProjectBuilder.builder().build()
         project.pluginManager.apply(PLUGIN_ID)
 
-        val subjectToSchema = mapOf("some_subject" to "some_schema")
+        val topicToSchema = mapOf("some_topic" to "some_schema")
 
         (project.extensions.getByName(EXTENSION_NAME) as AvroWizardExtension).apply {
-            this.subjectToSchema.set(subjectToSchema)
+            this.topicToSchema.set(topicToSchema)
         }
 
         val task = project.tasks.getByName(COMPATIBILITY_CHECK_TASK_NAME) as CompatibilityCheckTask
 
         assertEquals(DEFAULT_SCHEMA_REGISTRY_URL, task.schemaRegistryUrl.get())
+        assertEquals(DEFAULT_SUBJECT_NAME_STRATEGY, task.subjectNameStrategy.get())
         assertEquals(setOf(project.layout.buildDirectory.get().asFile.absolutePath), task.searchAvroFilesPaths.get())
     }
 

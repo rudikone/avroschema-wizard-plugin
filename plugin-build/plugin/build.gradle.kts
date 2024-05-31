@@ -29,6 +29,7 @@ dependencies {
     implementation(kotlin("stdlib"))
     shadow(gradleApi())
     implementation(libs.schemaRegistryClient)
+    implementation(libs.kafkaSchemaSerializer)
 
     testImplementation(libs.junit)
 }
