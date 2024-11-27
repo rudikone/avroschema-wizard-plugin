@@ -67,8 +67,8 @@ run
 gradle registerAllSchemas
 ```
 
-The task searches for a .avrp file with the name **_protocol_** on the path **_searchAvroFilePath_** and registers *
-*_schema_** under the _**topic config name**_ by the **_subjectNameStrategy_** strategy.
+The task searches for a .avrp file with the name **_protocol_** on the path **_searchAvroFilePath_** and registers
+**_schema_** under the _**topic config name**_ by the **_subjectNameStrategy_** strategy.
 
 If you specify only **_schema_** and do not specify _**protocol**_, then the task searches for a .avsc file with the
 name **_schema_** on the path **_searchAvroFilePath_** and registers **_schema_** under the _**topic config name**_ by
@@ -78,9 +78,7 @@ This action is performed for each `topic()` configuration
 
 ***Output***: Registered <schema_name> with id: <id_from_registry> for <topic_name>
 
-***If a schema with the same name is registered under multiple subjects, the id will be assigned to it once.
-See [Documentation](https://docs.confluent.io/platform/current/schema-registry/develop/using.html#register-an-existing-schema-to-a-new-subject-name)
-***
+***If a schema with the same name is registered under multiple subjects, the id will be assigned to it once. See [Documentation](https://docs.confluent.io/platform/current/schema-registry/develop/using.html#register-an-existing-schema-to-a-new-subject-name)***
 
 ### Compatibility check:
 
@@ -108,13 +106,11 @@ run
 gradle checkCompatibility --subject=<subject-name> --schema=<schema-name>
 ```
 
-The task searches for **_topic name config_** with **_schema_**, then searches for a .avpr file with the name *
-*_protocol_**
+The task searches for **_topic name config_** with **_schema_**, then searches for a .avpr file with the name **_protocol_**
 on the path **_searchAvroFilePath_** and checks if the current _**schema**_ is compatible with the **_subject_**.
 
 If you specify only **_schema_** and do not specify _**protocol**_, then the task searches for a .avsc file with the
-name **_schema_** on the path **_searchAvroFilePath_** checks if the current _**schema**_ is compatible with the *
-*_subject_**.
+name **_schema_** on the path **_searchAvroFilePath_** checks if the current _**schema**_ is compatible with the **_subject_**.
 
 ***If the subject does not exist, an error will be thrown!***
 
