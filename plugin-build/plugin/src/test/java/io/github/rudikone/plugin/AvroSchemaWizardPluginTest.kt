@@ -29,23 +29,35 @@ class AvroSchemaWizardPluginTest {
         project.pluginManager.apply(PLUGIN_ID)
 
         val schemaRegistryUrl = "some_url"
-        val searchAvroFilesPaths = setOf("some_path")
-        val topicToSchema = mapOf("some_topic" to "some_schema")
+        val topic = "some_topic"
+        val searchAvroFilePath = "some_path"
+        val protocol = "some_protocol"
+        val schema = "some_schema"
         val subjectNameStrategy = SubjectNameStrategies.RecordNameStrategy.name
 
         (project.extensions.getByName(EXTENSION_NAME) as AvroWizardExtension).apply {
             this.schemaRegistryUrl.set(schemaRegistryUrl)
-            this.searchAvroFilesPaths.set(searchAvroFilesPaths)
-            this.topicToSchema.set(topicToSchema)
-            this.subjectNameStrategy.set(subjectNameStrategy)
+            this.configs {
+                it.topic(topic) {
+                    this.searchAvroFilePath.set(searchAvroFilePath)
+                    this.protocol.set(protocol)
+                    this.schema.set(schema)
+                    this.subjectNameStrategy.set(subjectNameStrategy)
+                }
+            }
         }
 
         val task = project.tasks.getByName(REGISTER_TASK_NAME) as RegisterTask
 
         assertEquals(schemaRegistryUrl, task.schemaRegistryUrl.get())
-        assertEquals(searchAvroFilesPaths, task.searchAvroFilesPaths.get())
-        assertEquals(topicToSchema, task.topicToSchema.get())
-        assertEquals(subjectNameStrategy, task.subjectNameStrategy.get())
+
+        val subjectConfig = task.subjectConfigs.get()[topic]
+
+        assertEquals(topic, subjectConfig!!.name)
+        assertEquals(searchAvroFilePath, subjectConfig.searchAvroFilePath.get())
+        assertEquals(protocol, subjectConfig.protocol.get())
+        assertEquals(schema, subjectConfig.schema.get())
+        assertEquals(subjectNameStrategy, subjectConfig.subjectNameStrategy.get())
     }
 
     @Test
@@ -54,23 +66,35 @@ class AvroSchemaWizardPluginTest {
         project.pluginManager.apply(PLUGIN_ID)
 
         val schemaRegistryUrl = "some_url"
-        val searchAvroFilesPaths = setOf("some_path")
-        val topicToSchema = mapOf("some_topic" to "some_schema")
+        val topic = "some_topic"
+        val searchAvroFilePath = "some_path"
+        val protocol = "some_protocol"
+        val schema = "some_schema"
         val subjectNameStrategy = SubjectNameStrategies.RecordNameStrategy.name
 
         (project.extensions.getByName(EXTENSION_NAME) as AvroWizardExtension).apply {
             this.schemaRegistryUrl.set(schemaRegistryUrl)
-            this.searchAvroFilesPaths.set(searchAvroFilesPaths)
-            this.topicToSchema.set(topicToSchema)
-            this.subjectNameStrategy.set(subjectNameStrategy)
+            this.configs {
+                it.topic(topic) {
+                    this.searchAvroFilePath.set(searchAvroFilePath)
+                    this.protocol.set(protocol)
+                    this.schema.set(schema)
+                    this.subjectNameStrategy.set(subjectNameStrategy)
+                }
+            }
         }
 
         val task = project.tasks.getByName(COMPATIBILITY_CHECK_TASK_NAME) as CompatibilityCheckTask
 
         assertEquals(schemaRegistryUrl, task.schemaRegistryUrl.get())
-        assertEquals(searchAvroFilesPaths, task.searchAvroFilesPaths.get())
-        assertEquals(topicToSchema, task.topicToSchema.get())
-        assertEquals(subjectNameStrategy, task.subjectNameStrategy.get())
+
+        val subjectConfig = task.subjectConfigs.get()[topic]
+
+        assertEquals(topic, subjectConfig!!.name)
+        assertEquals(searchAvroFilePath, subjectConfig.searchAvroFilePath.get())
+        assertEquals(protocol, subjectConfig.protocol.get())
+        assertEquals(schema, subjectConfig.schema.get())
+        assertEquals(subjectNameStrategy, subjectConfig.subjectNameStrategy.get())
     }
 
     @Test
@@ -78,17 +102,51 @@ class AvroSchemaWizardPluginTest {
         val project = ProjectBuilder.builder().build()
         project.pluginManager.apply(PLUGIN_ID)
 
-        val topicToSchema = mapOf("some_topic" to "some_schema")
+        val topic = "some_topic"
+        val protocol = "some_protocol"
+        val schema = "some_schema"
 
         (project.extensions.getByName(EXTENSION_NAME) as AvroWizardExtension).apply {
-            this.topicToSchema.set(topicToSchema)
+            this.configs {
+                it.topic(topic) {
+                    this.protocol.set(protocol)
+                    this.schema.set(schema)
+                }
+            }
         }
 
         val task = project.tasks.getByName(REGISTER_TASK_NAME) as RegisterTask
 
         assertEquals(DEFAULT_SCHEMA_REGISTRY_URL, task.schemaRegistryUrl.get())
-        assertEquals(DEFAULT_SUBJECT_NAME_STRATEGY, task.subjectNameStrategy.get())
-        assertEquals(setOf(project.layout.buildDirectory.get().asFile.absolutePath), task.searchAvroFilesPaths.get())
+
+        val subjectConfig = task.subjectConfigs.get()[topic]
+
+        assertEquals(project.layout.buildDirectory.get().asFile.absolutePath, subjectConfig!!.searchAvroFilePath.get())
+        assertEquals(DEFAULT_SUBJECT_NAME_STRATEGY, subjectConfig.subjectNameStrategy.get())
+    }
+
+    @Test
+    fun `should passed only schema parameter from extension to REGISTER_TASK`() {
+        val project = ProjectBuilder.builder().build()
+        project.pluginManager.apply(PLUGIN_ID)
+
+        val topic = "some_topic"
+        val schema = "some_schema"
+
+        (project.extensions.getByName(EXTENSION_NAME) as AvroWizardExtension).apply {
+            this.configs {
+                it.topic(topic) {
+                    this.searchAvroFilePath.set(searchAvroFilePath)
+                    this.schema.set(schema)
+                }
+            }
+        }
+
+        val task = project.tasks.getByName(REGISTER_TASK_NAME) as RegisterTask
+        val subjectConfig = task.subjectConfigs.get()[topic]
+
+        assertEquals(schema, subjectConfig!!.schema.get())
+        assertEquals(null, subjectConfig.protocol.orNull)
     }
 
     @Test
@@ -96,17 +154,51 @@ class AvroSchemaWizardPluginTest {
         val project = ProjectBuilder.builder().build()
         project.pluginManager.apply(PLUGIN_ID)
 
-        val topicToSchema = mapOf("some_topic" to "some_schema")
+        val topic = "some_topic"
+        val protocol = "some_protocol"
+        val schema = "some_schema"
 
         (project.extensions.getByName(EXTENSION_NAME) as AvroWizardExtension).apply {
-            this.topicToSchema.set(topicToSchema)
+            this.configs {
+                it.topic(topic) {
+                    this.protocol.set(protocol)
+                    this.schema.set(schema)
+                }
+            }
         }
 
         val task = project.tasks.getByName(COMPATIBILITY_CHECK_TASK_NAME) as CompatibilityCheckTask
 
         assertEquals(DEFAULT_SCHEMA_REGISTRY_URL, task.schemaRegistryUrl.get())
-        assertEquals(DEFAULT_SUBJECT_NAME_STRATEGY, task.subjectNameStrategy.get())
-        assertEquals(setOf(project.layout.buildDirectory.get().asFile.absolutePath), task.searchAvroFilesPaths.get())
+
+        val subjectConfig = task.subjectConfigs.get()[topic]
+
+        assertEquals(project.layout.buildDirectory.get().asFile.absolutePath, subjectConfig!!.searchAvroFilePath.get())
+        assertEquals(DEFAULT_SUBJECT_NAME_STRATEGY, subjectConfig.subjectNameStrategy.get())
+    }
+
+    @Test
+    fun `should passed only schema parameter from extension to COMPATIBILITY_CHECK_TASK`() {
+        val project = ProjectBuilder.builder().build()
+        project.pluginManager.apply(PLUGIN_ID)
+
+        val topic = "some_topic"
+        val schema = "some_schema"
+
+        (project.extensions.getByName(EXTENSION_NAME) as AvroWizardExtension).apply {
+            this.configs {
+                it.topic(topic) {
+                    this.searchAvroFilePath.set(searchAvroFilePath)
+                    this.schema.set(schema)
+                }
+            }
+        }
+
+        val task = project.tasks.getByName(COMPATIBILITY_CHECK_TASK_NAME) as CompatibilityCheckTask
+        val subjectConfig = task.subjectConfigs.get()[topic]
+
+        assertEquals(schema, subjectConfig!!.schema.get())
+        assertEquals(null, subjectConfig.protocol.orNull)
     }
 
     companion object {

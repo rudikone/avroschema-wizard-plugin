@@ -1,34 +1,65 @@
 package io.github.rudikone.plugin
 
 import io.github.rudikone.plugin.SubjectNameStrategies.TopicNameStrategy
+import org.gradle.api.Action
+import org.gradle.api.Named
+import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.Project
-import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
-import org.gradle.api.provider.SetProperty
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.Optional
 import javax.inject.Inject
 
 const val DEFAULT_SCHEMA_REGISTRY_URL = "http://localhost:10081"
 val DEFAULT_SUBJECT_NAME_STRATEGY = TopicNameStrategy.name
 
-@Suppress("UnnecessaryAbstractClass")
-abstract class AvroWizardExtension
-    @Inject
-    constructor(project: Project) {
-        private val objects = project.objects
+abstract class AvroWizardExtension(
+    @Inject private val project: Project,
+) {
+    private val objects = project.objects
 
-        val schemaRegistryUrl: Property<String> =
-            objects.property(String::class.java).convention(DEFAULT_SCHEMA_REGISTRY_URL)
+    val schemaRegistryUrl: Property<String> =
+        objects.property(String::class.java).convention(DEFAULT_SCHEMA_REGISTRY_URL)
 
-        val searchAvroFilesPaths: SetProperty<String> =
-            objects.setProperty(String::class.java)
-                .convention(setOf(project.layout.buildDirectory.get().asFile.absolutePath))
+    val subjectConfigs: NamedDomainObjectContainer<SubjectConfig> =
+        objects.domainObjectContainer(SubjectConfig::class.java)
 
-        val topicToSchema: MapProperty<String, String> =
-            objects.mapProperty(String::class.java, String::class.java)
-
-        val subjectNameStrategy: Property<String> =
-            objects.property(String::class.java).convention(DEFAULT_SUBJECT_NAME_STRATEGY)
+    fun configs(action: Action<NamedDomainObjectContainer<SubjectConfig>>) {
+        action.execute(subjectConfigs)
     }
+
+    fun NamedDomainObjectContainer<SubjectConfig>.topic(
+        name: String,
+        config: SubjectConfig.() -> Unit,
+    ) {
+        create(name, config)
+    }
+}
+
+abstract class SubjectConfig(
+    @Inject private val project: Project,
+    private val name: String,
+) : Named {
+    private val objects = project.objects
+
+    @get:Input
+    @get:Optional
+    val searchAvroFilePath: Property<String> =
+        objects.property(String::class.java).convention(project.layout.buildDirectory.get().asFile.absolutePath)
+
+    @get:Input
+    val protocol: Property<String> = objects.property(String::class.java)
+
+    @get:Input
+    val schema: Property<String> = objects.property(String::class.java)
+
+    @get:Input
+    @get:Optional
+    val subjectNameStrategy: Property<String> =
+        objects.property(String::class.java).convention(DEFAULT_SUBJECT_NAME_STRATEGY)
+
+    override fun getName(): String = name
+}
 
 enum class SubjectNameStrategies {
     TopicNameStrategy,
@@ -37,6 +68,6 @@ enum class SubjectNameStrategies {
     ;
 
     companion object {
-        fun from(name: String) = values().find { it.name == name }
+        fun from(name: String) = entries.find { it.name == name }
     }
 }
