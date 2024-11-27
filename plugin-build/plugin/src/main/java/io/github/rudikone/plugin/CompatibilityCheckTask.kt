@@ -6,11 +6,11 @@ import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import io.confluent.kafka.serializers.subject.RecordNameStrategy
 import io.confluent.kafka.serializers.subject.TopicNameStrategy
 import io.confluent.kafka.serializers.subject.TopicRecordNameStrategy
+import org.apache.avro.Protocol
 import org.apache.avro.Schema
 import org.gradle.api.DefaultTask
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
-import org.gradle.api.provider.SetProperty
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.TaskAction
@@ -37,19 +37,15 @@ abstract class CompatibilityCheckTask : DefaultTask() {
     abstract val schemaRegistryUrl: Property<String>
 
     @get:Input
-    @get:Optional
-    abstract val searchAvroFilesPaths: SetProperty<String>
-
-    @get:Input
-    abstract val topicToSchema: MapProperty<String, String>
-
-    @get:Input
-    @get:Optional
-    abstract val subjectNameStrategy: Property<String>
+    abstract val subjectConfigs: MapProperty<String, SubjectConfig>
 
     @TaskAction
     fun checkCompatibility() {
         runCatching {
+            if (subjectConfigs.orNull.isNullOrEmpty()) {
+                error("Topic configs is empty!")
+            }
+
             if (subject.isPresent && schemaForCheck.isPresent) {
                 check()
             } else {
@@ -69,15 +65,11 @@ abstract class CompatibilityCheckTask : DefaultTask() {
     }
 
     private fun checkForAllSchemas() {
-        if (topicToSchema.orNull.isNullOrEmpty()) {
-            error("No schema has been announced!")
-        }
-
-        val registryClient = CachedSchemaRegistryClient(schemaRegistryUrl.get(), topicToSchema.get().entries.size)
+        val registryClient = CachedSchemaRegistryClient(schemaRegistryUrl.get(), subjectConfigs.get().size)
 
         registryClient.use { client ->
-            topicToSchema.get().forEach { (topic, schemaName) ->
-                test(client = client, topic = topic, schemaName = schemaName)
+            subjectConfigs.get().forEach { (topic, config) ->
+                test(client = client, topic = topic, config = config)
             }
         }
     }
@@ -85,14 +77,14 @@ abstract class CompatibilityCheckTask : DefaultTask() {
     private fun test(
         client: SchemaRegistryClient,
         topic: String,
-        schemaName: String,
+        config: SubjectConfig,
     ) {
-        val avroFile = findAvroFileByName(searchPaths = searchAvroFilesPaths.get(), schemaName = schemaName)
-        val schema = AvroSchema(Schema.Parser().parse(avroFile))
-
         val nameStrategyEnum =
-            SubjectNameStrategies.from(subjectNameStrategy.get())
-                ?: error("Unsupported subject name strategy! Allowed values: ${SubjectNameStrategies.values()}")
+            SubjectNameStrategies.from(config.subjectNameStrategy.get())
+                ?: error(
+                    "Unsupported subject name strategy! " +
+                        "Allowed values: ${SubjectNameStrategies.entries.toTypedArray()}",
+                )
 
         val nameStrategy =
             when (nameStrategyEnum) {
@@ -101,16 +93,25 @@ abstract class CompatibilityCheckTask : DefaultTask() {
                 SubjectNameStrategies.TopicRecordNameStrategy -> TopicRecordNameStrategy()
             }
 
-        val subject = nameStrategy.subjectName(topic, false, schema)
+        val fileName =
+            config.protocol.orNull ?: config.schema.orNull ?: error("No avro file is declared for a topic $topic!")
 
-        val isCompatible = client.testCompatibility(subject, schema)
+        val searchPath =
+            config.searchAvroFilePath.orNull ?: error("No path is declared to search for an avro file named $fileName!")
 
-        if (isCompatible) {
-            val msg = "Schema $schemaName is compatible with the latest schema under subject $subject"
-            logger.lifecycle(msg)
+        val avroFile = findAvroFileByName(path = searchPath, name = fileName)
+
+        if (avroFile.extension == AVSC) {
+            val schema = AvroSchema(Schema.Parser().parse(avroFile))
+            val subject = nameStrategy.subjectName(topic, false, schema)
+            val isCompatible = client.testCompatibility(subject, schema)
+            logCompatibleResult(schemaName = config.schema.get(), subject = subject, isCompatible = isCompatible)
         } else {
-            val msg = "Schema $schemaName is not compatible with the latest schema under subject $subject"
-            logger.lifecycle(msg)
+            val protocol = Protocol.parse(avroFile)
+            val schema = AvroSchema(protocol.getType(config.schema.get()))
+            val subject = nameStrategy.subjectName(topic, false, schema)
+            val isCompatible = client.testCompatibility(subject, schema)
+            logCompatibleResult(schemaName = config.schema.get(), subject = subject, isCompatible = isCompatible)
         }
     }
 
@@ -119,11 +120,38 @@ abstract class CompatibilityCheckTask : DefaultTask() {
         subject: String,
         schemaName: String,
     ) {
-        val avroFile = findAvroFileByName(searchPaths = searchAvroFilesPaths.get(), schemaName = schemaName)
-        val schema = AvroSchema(Schema.Parser().parse(avroFile))
+        val config =
+            subjectConfigs.get().values.find { it.schema.get() == schemaName }
+                ?: error("No configuration declared in the avroWizardConfig block for the schema $schemaName!")
 
-        val isCompatible = client.testCompatibility(subject, schema)
+        val fileName =
+            config.protocol.orNull
+                ?: config.schema.orNull
+                ?: error("No avro file is declared for a topic ${config.name}!")
 
+        val searchPath =
+            config.searchAvroFilePath.orNull
+                ?: error("No path is declared to search for an avro file named $fileName!")
+
+        val avroFile = findAvroFileByName(path = searchPath, name = fileName)
+
+        if (avroFile.extension == AVSC) {
+            val schema = AvroSchema(Schema.Parser().parse(avroFile))
+            val isCompatible = client.testCompatibility(subject, schema)
+            logCompatibleResult(schemaName = schemaName, subject = subject, isCompatible = isCompatible)
+        } else {
+            val protocol = Protocol.parse(avroFile)
+            val schema = AvroSchema(protocol.getType(schemaName))
+            val isCompatible = client.testCompatibility(subject, schema)
+            logCompatibleResult(schemaName = schemaName, subject = subject, isCompatible = isCompatible)
+        }
+    }
+
+    private fun logCompatibleResult(
+        schemaName: String,
+        subject: String,
+        isCompatible: Boolean,
+    ) {
         if (isCompatible) {
             val msg = "Schema $schemaName is compatible with the latest schema under subject $subject"
             logger.lifecycle(msg)
