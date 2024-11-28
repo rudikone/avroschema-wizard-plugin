@@ -1,3 +1,5 @@
+import io.github.rudikone.plugin.topic
+
 plugins {
     java
     id("io.github.rudikone.avroschema-wizard-plugin")

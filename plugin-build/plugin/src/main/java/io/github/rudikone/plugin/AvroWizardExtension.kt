@@ -27,13 +27,6 @@ abstract class AvroWizardExtension(
     fun configs(action: Action<NamedDomainObjectContainer<SubjectConfig>>) {
         action.execute(subjectConfigs)
     }
-
-    fun NamedDomainObjectContainer<SubjectConfig>.topic(
-        name: String,
-        config: SubjectConfig.() -> Unit,
-    ) {
-        create(name, config)
-    }
 }
 
 abstract class SubjectConfig(
@@ -59,6 +52,13 @@ abstract class SubjectConfig(
         objects.property(String::class.java).convention(DEFAULT_SUBJECT_NAME_STRATEGY)
 
     override fun getName(): String = name
+}
+
+fun NamedDomainObjectContainer<SubjectConfig>.topic(
+    name: String,
+    config: SubjectConfig.() -> Unit,
+) {
+    create(name, config)
 }
 
 enum class SubjectNameStrategies {
