@@ -58,6 +58,25 @@ avroWizardConfig {
     }
 }
 ```
+OR
+```
+plugins {
+    id("io.github.rudikone.avroschema-wizard-plugin") version <version>
+}
+
+avroWizardConfig {
+    schemaRegistryUrl.set("http://localhost:8081")
+    configs {
+        create("my-first-topic") {
+            searchAvroFilePath.set("$projectDir/src/main/resources/avro")
+            protocol.set("ExampleProtocol")
+            schema.set("FirstExampleRecordFromProtocol") 
+            subjectNameStrategy.set("TopicNameStrategy") 
+        }
+...
+    }
+}
+```
 
 ### Register schemas:
 
