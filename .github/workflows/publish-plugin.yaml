@@ -22,5 +22,5 @@ jobs:
       - name: Run Gradle tasks
         run: ./gradlew preMerge --continue
       - name: Publish on Plugin Portal
-        run: ./gradlew --project-dir plugin-build setupPluginUploadFromEnvironment publishPlugins
+        run: ./gradlew setupPluginUploadFromEnvironment publishPlugins
         if: success()
