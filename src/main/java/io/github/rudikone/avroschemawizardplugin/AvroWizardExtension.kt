@@ -1,6 +1,6 @@
-package io.github.rudikone.plugin
+package io.github.rudikone.avroschemawizardplugin
 
-import io.github.rudikone.plugin.SubjectNameStrategies.TopicNameStrategy
+import io.github.rudikone.avroschemawizardplugin.SubjectNameStrategies.TopicNameStrategy
 import org.gradle.api.Action
 import org.gradle.api.Named
 import org.gradle.api.NamedDomainObjectContainer
@@ -68,6 +68,6 @@ enum class SubjectNameStrategies {
     ;
 
     companion object {
-        fun from(name: String) = entries.find { it.name == name }
+        fun from(name: String) = values().find { it.name == name }
     }
 }

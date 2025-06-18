@@ -1,4 +1,4 @@
-package io.github.rudikone.plugin
+package io.github.rudikone.avroschemawizardplugin
 
 import org.gradle.testfixtures.ProjectBuilder
 import org.junit.Assert.assertEquals
@@ -38,7 +38,7 @@ class AvroSchemaWizardPluginTest {
         (project.extensions.getByName(EXTENSION_NAME) as AvroWizardExtension).apply {
             this.schemaRegistryUrl.set(schemaRegistryUrl)
             this.configs {
-                it.topic(topic) {
+                topic(topic) {
                     this.searchAvroFilePath.set(searchAvroFilePath)
                     this.protocol.set(protocol)
                     this.schema.set(schema)
@@ -75,7 +75,7 @@ class AvroSchemaWizardPluginTest {
         (project.extensions.getByName(EXTENSION_NAME) as AvroWizardExtension).apply {
             this.schemaRegistryUrl.set(schemaRegistryUrl)
             this.configs {
-                it.topic(topic) {
+                topic(topic) {
                     this.searchAvroFilePath.set(searchAvroFilePath)
                     this.protocol.set(protocol)
                     this.schema.set(schema)
@@ -108,7 +108,7 @@ class AvroSchemaWizardPluginTest {
 
         (project.extensions.getByName(EXTENSION_NAME) as AvroWizardExtension).apply {
             this.configs {
-                it.topic(topic) {
+                topic(topic) {
                     this.protocol.set(protocol)
                     this.schema.set(schema)
                 }
@@ -135,7 +135,7 @@ class AvroSchemaWizardPluginTest {
 
         (project.extensions.getByName(EXTENSION_NAME) as AvroWizardExtension).apply {
             this.configs {
-                it.topic(topic) {
+                topic(topic) {
                     this.searchAvroFilePath.set(searchAvroFilePath)
                     this.schema.set(schema)
                 }
@@ -160,7 +160,7 @@ class AvroSchemaWizardPluginTest {
 
         (project.extensions.getByName(EXTENSION_NAME) as AvroWizardExtension).apply {
             this.configs {
-                it.topic(topic) {
+                topic(topic) {
                     this.protocol.set(protocol)
                     this.schema.set(schema)
                 }
@@ -187,7 +187,7 @@ class AvroSchemaWizardPluginTest {
 
         (project.extensions.getByName(EXTENSION_NAME) as AvroWizardExtension).apply {
             this.configs {
-                it.topic(topic) {
+                topic(topic) {
                     this.searchAvroFilePath.set(searchAvroFilePath)
                     this.schema.set(schema)
                 }

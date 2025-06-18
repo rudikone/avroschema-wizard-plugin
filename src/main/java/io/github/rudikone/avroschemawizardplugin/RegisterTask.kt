@@ -1,4 +1,4 @@
-package io.github.rudikone.plugin
+package io.github.rudikone.avroschemawizardplugin
 
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient
@@ -42,7 +42,7 @@ abstract class RegisterTask : DefaultTask() {
                         SubjectNameStrategies.from(config.subjectNameStrategy.get())
                             ?: error(
                                 "Unsupported subject name strategy! " +
-                                    "Allowed values: ${SubjectNameStrategies.entries.toTypedArray()}",
+                                    "Allowed values: ${SubjectNameStrategies.values()}",
                             )
 
                     val nameStrategy =

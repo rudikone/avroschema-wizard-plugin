@@ -1,4 +1,4 @@
-package io.github.rudikone.plugin
+package io.github.rudikone.avroschemawizardplugin
 
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -12,8 +12,8 @@ abstract class AvroSchemaWizardPlugin : Plugin<Project> {
         val extension = project.extensions.create(EXTENSION_NAME, AvroWizardExtension::class.java, project)
 
         project.tasks.register(REGISTER_TASK_NAME, RegisterTask::class.java) {
-            it.schemaRegistryUrl.set(extension.schemaRegistryUrl)
-            it.subjectConfigs.set(
+            schemaRegistryUrl.set(extension.schemaRegistryUrl)
+            subjectConfigs.set(
                 project.provider {
                     extension.subjectConfigs.associateBy { config -> config.name }
                 },
@@ -21,8 +21,8 @@ abstract class AvroSchemaWizardPlugin : Plugin<Project> {
         }
 
         project.tasks.register(COMPATIBILITY_CHECK_TASK_NAME, CompatibilityCheckTask::class.java) {
-            it.schemaRegistryUrl.set(extension.schemaRegistryUrl)
-            it.subjectConfigs.set(
+            schemaRegistryUrl.set(extension.schemaRegistryUrl)
+            subjectConfigs.set(
                 project.provider {
                     extension.subjectConfigs.associateBy { config -> config.name }
                 },

@@ -1,4 +1,4 @@
-package io.github.rudikone.plugin
+package io.github.rudikone.avroschemawizardplugin
 
 import java.io.File
 import java.nio.file.Files

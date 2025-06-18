@@ -58,25 +58,6 @@ avroWizardConfig {
     }
 }
 ```
-OR
-```
-plugins {
-    id("io.github.rudikone.avroschema-wizard-plugin") version <version>
-}
-
-avroWizardConfig {
-    schemaRegistryUrl.set("http://localhost:8081")
-    configs {
-        create("my-first-topic") {
-            searchAvroFilePath.set("$projectDir/src/main/resources/avro")
-            protocol.set("ExampleProtocol")
-            schema.set("FirstExampleRecordFromProtocol") 
-            subjectNameStrategy.set("TopicNameStrategy") 
-        }
-...
-    }
-}
-```
 
 ### Register schemas:
 
@@ -152,11 +133,6 @@ configs:
 | protocol            | Name of .avpr file                                                                    | -                              | -        |
 | schema              | Name of .avsc file or record in protocol                                              | -                              | +        |
 | subjectNameStrategy | Subject Name Strategy: TopicNameStrategy, RecordNameStrategy, TopicRecordNameStrategy | TopicNameStrategy              | -        |
-
-### Example:
-
-See [example](example/build.gradle.kts) module. Run [docker-compose](example/docker-compose.yaml), testing plugin tasks.
-For convenience, you can use schema-registry-ui (http://localhost:8002/ in your browser).
 
 ## Contributing 🤝
 

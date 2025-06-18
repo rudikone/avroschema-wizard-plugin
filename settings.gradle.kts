@@ -10,8 +10,8 @@ pluginManagement {
 
 dependencyResolutionManagement {
     repositories {
-        mavenCentral()
         google()
+        mavenCentral()
         maven {
             url = uri("https://packages.confluent.io/maven")
         }
@@ -32,6 +32,3 @@ gradleEnterprise {
 }
 
 rootProject.name = "avroschema-wizard-plugin"
-
-include(":example")
-includeBuild("plugin-build")
