@@ -52,7 +52,13 @@ dependencies {
     implementation(libs.schemaRegistryClient)
     implementation(libs.kafkaSchemaSerializer)
 
-    testImplementation(libs.junit)
+    testImplementation(libs.junitJupiterApi)
+    testRuntimeOnly(libs.junitJupiterEngine)
+    testImplementation(libs.junitJupiterParams)
+    testImplementation(libs.testcontainers)
+    testImplementation(libs.testcontainersKafka)
+    testImplementation(libs.testcontainersJunitJupiter)
+    testImplementation(kotlin("test"))
 }
 
 java {
@@ -76,6 +82,17 @@ tasks {
         reports {
             html.required.set(true)
             html.outputLocation.set(file("build/reports/detekt.html"))
+        }
+    }
+
+    /*
+     * It is needed to ensure that tests always verify the current version of the plugin.
+     * See io.github.rudikone.avroschemawizardplugin.RegisterTaskTest and io.github.rudikone.avroschemawizardplugin.testutils.Plugin
+     */
+    test {
+        dependsOn(publishToMavenLocal)
+        useJUnitPlatform {
+            environment.putIfAbsent("avroschema-wizard-plugin-version", project.version)
         }
     }
 

@@ -3,10 +3,11 @@ detekt = "1.23.4"
 ktlintGradle = "12.0.3"
 pluginPublish = "1.2.1"
 versionCheck = "0.50.0"
-junit = "4.13.2"
+junit = "5.8.1"
 schemaRegistryClient = "7.6.0"
 kafkaSchemaSerializer = "7.6.0"
 shadow = "8.1.1"
+testcontainers = "1.20.2"
 
 [plugins]
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt"}
@@ -16,6 +17,11 @@ versionCheck = { id = "com.github.ben-manes.versions", version.ref = "versionChe
 shadow = { id = "com.github.johnrengelman.shadow", version.ref = "shadow"}
 
 [libraries]
-junit = { module = "junit:junit", version.ref = "junit" }
+junitJupiterApi = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
+junitJupiterEngine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
+junitJupiterParams = { module = "org.junit.jupiter:junit-jupiter-params", version.ref = "junit" }
 schemaRegistryClient = { module = "io.confluent:kafka-schema-registry-client", version.ref = "schemaRegistryClient"}
 kafkaSchemaSerializer = { module = "io.confluent:kafka-schema-serializer", version.ref = "kafkaSchemaSerializer"}
+testcontainers = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers"}
+testcontainersKafka = { module = "org.testcontainers:kafka", version.ref = "testcontainers"}
+testcontainersJunitJupiter = { module = "org.testcontainers:junit-jupiter", version.ref = "testcontainers"}

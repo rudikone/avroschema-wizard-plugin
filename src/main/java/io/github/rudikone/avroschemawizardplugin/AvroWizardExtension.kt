@@ -41,6 +41,7 @@ abstract class SubjectConfig(
         objects.property(String::class.java).convention(project.layout.buildDirectory.get().asFile.absolutePath)
 
     @get:Input
+    @get:Optional
     val protocol: Property<String> = objects.property(String::class.java)
 
     @get:Input
