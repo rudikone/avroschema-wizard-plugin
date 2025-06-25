@@ -40,20 +40,20 @@ avroWizardConfig {
     schemaRegistryUrl = "http://localhost:8081"
     configs {
         topic("my-first-topic") {
-            searchAvroFilePath = "$projectDir/src/main/resources/avro"
-            protocol = "ExampleProtocol"
-            schema = "FirstExampleRecordFromProtocol"
-            subjectNameStrategy = "TopicNameStrategy"
+            searchAvroFilePath.set("$projectDir/src/main/resources/avro")
+            protocol.set("ExampleProtocol")
+            schema.set("FirstExampleRecordFromProtocol")
+            subjectNameStrategy.set("TopicNameStrategy")
         }
         topic("my-second-topic") {
-            searchAvroFilePath = "$projectDir/src/main/resources/avro"
-            protocol = "ExampleProtocol"
-            schema = "SecondExampleRecordFromProtocol"
-            subjectNameStrategy = "RecordNameStrategy"
+            searchAvroFilePath.set("$projectDir/src/main/resources/avro")
+            protocol.set("ExampleProtocol")
+            schema.set("SecondExampleRecordFromProtocol")
+            subjectNameStrategy.set("RecordNameStrategy")
         }
         topic("my-third-topic") {
-            searchAvroFilePath = "$projectDir/src/main/resources/avro"
-            schema = "Example"
+            searchAvroFilePath.set("$projectDir/src/main/resources/avro")
+            schema.set("Example")
         }
     }
 }
@@ -76,7 +76,7 @@ the **_subjectNameStrategy_** strategy.
 
 This action is performed for each `topic()` configuration
 
-***Output***: Registered <schema_name> with id: <id_from_registry> for <topic_name>
+***Output***: Registered <schema_name> with id: <id_from_registry> for <subject_name>
 
 ***If a schema with the same name is registered under multiple subjects, the id will be assigned to it once. See [Documentation](https://docs.confluent.io/platform/current/schema-registry/develop/using.html#register-an-existing-schema-to-a-new-subject-name)***
 
