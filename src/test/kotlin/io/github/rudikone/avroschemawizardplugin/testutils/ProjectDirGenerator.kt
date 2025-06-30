@@ -9,15 +9,14 @@ private val SEPARATOR = lineSeparator()
 private val TAB = SPACE.repeat(TAB_SPACE_COUNT)
 
 object ProjectDirGenerator {
-    fun generate(project: TestProject): File {
-        val projectDir: File =
-            File("build")
-                .resolve("integrationTest")
-                .resolve("projectDir")
-                .also {
-                    it.delete()
-                    it.mkdirs()
-                }
+    fun generate(
+        project: TestProject,
+        projectDir: File,
+    ): File {
+        projectDir.resolve("build")
+            .resolve("integrationTest")
+            .resolve("projectDir")
+            .also { it.mkdirs() }
 
         projectDir.resolve("build.gradle.kts").also { it.writeText(generateBuildText(project)) }
         projectDir.resolve("settings.gradle.kts").also { it.writeText(generateSettingGradle(project)) }
@@ -25,13 +24,10 @@ object ProjectDirGenerator {
         return projectDir
     }
 
-    fun File.addAvroFiles(vararg avroFiles: Avro): File {
+    fun File.addOrReplaceAvroFiles(vararg avroFiles: Avro): File {
         this.resolve("src")
             .resolve("resources")
-            .also {
-                it.delete()
-                it.mkdirs()
-            }
+            .also { it.mkdirs() }
             .also { resourcesDir ->
                 avroFiles.forEach { avro ->
                     resourcesDir.resolve(avro.name).also { it.writeText(avro.payLoad) }
