@@ -14,11 +14,13 @@ plugins {
     alias(libs.plugins.versionCheck)
 }
 
+val implClass = property("IMPLEMENTATION_CLASS").toString()
+
 gradlePlugin {
     plugins {
         create(property("ID").toString()) {
             id = property("ID").toString()
-            implementationClass = property("IMPLEMENTATION_CLASS").toString()
+            implementationClass = implClass
             version = property("VERSION").toString()
             description = property("DESCRIPTION").toString()
             displayName = property("DISPLAY_NAME").toString()
@@ -102,7 +104,7 @@ tasks {
         relocate("io.confluent", "avrowizard.io.confluent")
         relocate("org.apache.avro", "avrowizard.org.apache.avro")
         manifest {
-            attributes["Main-Class"] = "io.github.rudikone.avroschemawizardplugin.AvroSchemaWizardPlugin"
+            attributes["Main-Class"] = implClass
         }
     }
 
