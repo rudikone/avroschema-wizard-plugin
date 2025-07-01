@@ -43,10 +43,7 @@ class CompatibilityTaskTest : BaseTaskTest() {
                         "namespace": "ru.rudikov.example",
                         "name": "Example",
                         "fields": [
-                            {
-                                "name": "Age",
-                                "type": "int"
-                            }
+                            { "name": "Age", "type": "int" }
                         ]
                     }
                     """.trimIndent(),
@@ -63,18 +60,8 @@ class CompatibilityTaskTest : BaseTaskTest() {
                         "namespace": "ru.rudikov.example",
                         "name": "Example",
                         "fields": [
-                            {
-                                "name": "Age",
-                                "type": "int"
-                            },
-                            {
-                                "name": "userName",
-                                "type": [
-                                    "null",
-                                    "string"
-                                ],
-                                "default": null
-                            }
+                            { "name": "Age", "type": "int" },
+                            { "name": "userName", "type": [ "null", "string" ], "default": null }
                         ]
                     }
                     """.trimIndent(),
@@ -135,10 +122,7 @@ class CompatibilityTaskTest : BaseTaskTest() {
                         "namespace": "ru.rudikov.example",
                         "name": "Example",
                         "fields": [
-                            {
-                                "name": "Age",
-                                "type": "int"
-                            }
+                            { "name": "Age", "type": "int" }
                         ]
                     }
                     """.trimIndent(),
@@ -155,10 +139,7 @@ class CompatibilityTaskTest : BaseTaskTest() {
                         "namespace": "ru.rudikov.example",
                         "name": "Example",
                         "fields": [
-                            {
-                                "name": "Age",
-                                "type": "boolean"
-                            }
+                            { "name": "Age", "type": "boolean" }
                         ]
                     }
                     """.trimIndent(),

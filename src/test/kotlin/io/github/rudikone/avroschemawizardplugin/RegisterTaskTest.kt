@@ -1,5 +1,6 @@
 package io.github.rudikone.avroschemawizardplugin
 
+import io.github.rudikone.avroschemawizardplugin.testutils.Avro
 import io.github.rudikone.avroschemawizardplugin.testutils.ProjectDirGenerator
 import io.github.rudikone.avroschemawizardplugin.testutils.ProjectDirGenerator.addOrReplaceAvroFiles
 import io.github.rudikone.avroschemawizardplugin.testutils.SimpleProject
@@ -11,6 +12,7 @@ import io.github.rudikone.avroschemawizardplugin.testutils.kotlinJvm
 import io.github.rudikone.avroschemawizardplugin.testutils.randomString
 import org.gradle.testkit.runner.UnexpectedBuildFailure
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.io.TempDir
@@ -299,6 +301,56 @@ class RegisterTaskTest : BaseTaskTest() {
             buildResult.message?.contains("Failed register FirstExampleRecordFromProtocol for $firstTopic") == true
             buildResult.message?.contains("Failed register SecondExampleRecordFromProtocol for $secondTopic") == true
             buildResult.message?.contains("Failed register Example for $thirdTopic") == true
+        }
+    }
+
+    @Test
+    @DisplayName("Default value must match the first type in a union in Avro schema")
+    fun `invalid default exception thrown`() {
+        val topic = randomString()
+        val schema = "Example"
+
+        val exampleSchemaFile =
+            Avro(
+                name = "$schema.avsc",
+                payLoad =
+                    """
+                    {
+                        "type": "record",
+                        "namespace": "ru.rudikov.example",
+                        "name": "$schema",
+                        "fields": [
+                            { "name": "Age", "type": [ "int", "null"], "default": null }
+                        ]
+                    }
+                    """.trimIndent(),
+            )
+
+        val avroWizardConfig =
+            """
+            avroWizardConfig {
+                schemaRegistryUrl.set("$schemaRegistryUrl")
+                configs {
+                    topic("$topic") {
+                        searchAvroFilePath.set("${'$'}projectDir/src/resources")
+                        schema.set("$schema")
+                    }
+                }
+            }
+            """.trimIndent()
+
+        val testProject = SimpleProject(avroWizardConfig = avroWizardConfig)
+        val testProjectDir = ProjectDirGenerator.generate(project = testProject, projectDir = tmp)
+        testProjectDir.addOrReplaceAvroFiles(exampleSchemaFile)
+
+        val buildResult =
+            assertThrows<UnexpectedBuildFailure> {
+                buildProject(projectDir = testProjectDir, arguments = arrayOf(REGISTER_TASK_NAME))
+            }
+
+        assertTrue {
+            buildResult.message?.contains("Failed registerAllSchemas task!") == true
+            buildResult.message?.contains("Failed register $schema for $topic") == true
         }
     }
 

@@ -53,22 +53,9 @@ fun exampleSchema() =
                 "namespace": "ru.rudikov.example",
                 "name": "ExampleRecordFromSchema",
                 "fields": [
-                    {
-                        "name": "Name",
-                        "type": "string"
-                    },
-                    {
-                        "name": "Age",
-                        "type": "int"
-                    },
-                    {
-                        "name": "userName",
-                        "type": [
-                            "null",
-                            "string"
-                        ],
-                        "default": null
-                    }
+                    { "name": "Name", "type": "string" },
+                    { "name": "Age", "type": "int" },
+                    { "name": "userName", "type": [ "null", "string" ], "default": null }
                 ]
             }
             """.trimIndent(),
