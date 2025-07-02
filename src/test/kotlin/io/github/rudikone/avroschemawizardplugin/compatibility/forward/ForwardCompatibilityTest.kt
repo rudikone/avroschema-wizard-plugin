@@ -1,3 +1,5 @@
+@file:Suppress("MaxLineLength", "LongMethod", "ktlint:standard:max-line-length")
+
 package io.github.rudikone.avroschemawizardplugin.compatibility.forward
 
 import io.github.rudikone.avroschemawizardplugin.BaseTaskTest
@@ -7,10 +9,9 @@ import io.github.rudikone.avroschemawizardplugin.testutils.Avro
 import io.github.rudikone.avroschemawizardplugin.testutils.ProjectDirGenerator
 import io.github.rudikone.avroschemawizardplugin.testutils.ProjectDirGenerator.addOrReplaceAvroFiles
 import io.github.rudikone.avroschemawizardplugin.testutils.SimpleProject
-import io.github.rudikone.avroschemawizardplugin.testutils.TestProject
 import io.github.rudikone.avroschemawizardplugin.testutils.buildProject
 import io.github.rudikone.avroschemawizardplugin.testutils.randomString
-import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
@@ -20,65 +21,35 @@ import java.io.File
 
 private const val COMPATIBILITY = "FORWARD"
 
-@Suppress("MaxLineLength", "LongMethod", "ktlint:standard:max-line-length")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @DisplayName("All allowed Avro schema evolutions are compatible under FORWARD compatibility. Upgrade first: Producer")
 class ForwardCompatibilityTest : BaseTaskTest() {
-    private lateinit var topic: String
-    private lateinit var schemaFileBeforeChanges: Avro
-    private lateinit var avroWizardConfig: String
-    private lateinit var testProject: TestProject
-    private lateinit var testProjectDir: File
-
-    @BeforeAll
-    fun setupProject() {
-        topic = randomString()
-
-        schemaFileBeforeChanges =
-            Avro(
-                name = "Example.avsc",
-                payLoad =
-                    """
-                    {
-                        "type": "record",
-                        "namespace": "ru.rudikov.example",
-                        "name": "Example",
-                        "fields": [
-                            { "name": "Age", "type": "int", "default": 0 },
-                            { "name": "Name", "type": ["null", "string"] },
-                            {
-                                "name": "Gender",
-                                "type": {
-                                    "type": "enum", "name": "Gender", "symbols": ["MALE", "FEMALE"]
-                                 }
-                            }
-                        ]
-                    }
-                    """.trimIndent(),
-            )
-
-        avroWizardConfig =
-            """
-            avroWizardConfig {
-                schemaRegistryUrl.set("$schemaRegistryUrl")
-                configs {
-                    topic("$topic") {
-                        searchAvroFilePath.set("${'$'}projectDir/src/resources")
-                        schema.set("Example")
-                    }
+    private val beforeChanges =
+        Avro(
+            name = "Example.avsc",
+            payLoad =
+                """
+                {
+                    "type": "record",
+                    "namespace": "ru.rudikov.example",
+                    "name": "Example",
+                    "fields": [
+                        { "name": "Age", "type": "int", "default": 0 },
+                        { "name": "Name", "type": ["null", "string"] },
+                        {
+                            "name": "Gender",
+                            "type": {
+                                "type": "enum", "name": "Gender", "symbols": ["MALE", "FEMALE"]
+                             }
+                        }
+                    ]
                 }
-            }
-            """.trimIndent()
-
-        testProject = SimpleProject(avroWizardConfig = avroWizardConfig)
-        testProjectDir = ProjectDirGenerator.generate(project = testProject, projectDir = tmp)
-        testProjectDir.addOrReplaceAvroFiles(schemaFileBeforeChanges)
-        buildProject(projectDir = testProjectDir, arguments = arrayOf(REGISTER_TASK_NAME))
-    }
+                """.trimIndent(),
+        )
 
     @Test
     fun `field with default value is added`() {
-        val schemaFileAfterChanges =
+        val afterChanges =
             Avro(
                 name = "Example.avsc",
                 payLoad =
@@ -102,26 +73,12 @@ class ForwardCompatibilityTest : BaseTaskTest() {
                     """.trimIndent(),
             )
 
-        // Making changes to schema
-        testProjectDir.addOrReplaceAvroFiles(schemaFileAfterChanges)
-
-        // Check compatibility
-        val checkCompatibilityTaskResult =
-            buildProject(
-                projectDir = testProjectDir,
-                arguments = arrayOf(COMPATIBILITY_CHECK_TASK_NAME, "--compatibility=$COMPATIBILITY"),
-            ).output
-
-        Assertions.assertTrue {
-            checkCompatibilityTaskResult.contains(
-                "Schema ru.rudikov.example.Example is compatible with subject $topic-value. Compatibility: $COMPATIBILITY",
-            )
-        }
+        test(afterChanges)
     }
 
     @Test
     fun `record field with nested defaults is added`() {
-        val schemaFileAfterChanges =
+        val afterChanges =
             Avro(
                 name = "Example.avsc",
                 payLoad =
@@ -155,26 +112,12 @@ class ForwardCompatibilityTest : BaseTaskTest() {
                     """.trimIndent(),
             )
 
-        // Making changes to schema
-        testProjectDir.addOrReplaceAvroFiles(schemaFileAfterChanges)
-
-        // Check compatibility
-        val checkCompatibilityTaskResult =
-            buildProject(
-                projectDir = testProjectDir,
-                arguments = arrayOf(COMPATIBILITY_CHECK_TASK_NAME, "--compatibility=$COMPATIBILITY"),
-            ).output
-
-        Assertions.assertTrue {
-            checkCompatibilityTaskResult.contains(
-                "Schema ru.rudikov.example.Example is compatible with subject $topic-value. Compatibility: $COMPATIBILITY",
-            )
-        }
+        test(afterChanges)
     }
 
     @Test
     fun `enum value is removed`() {
-        val schemaFileAfterChanges =
+        val afterChanges =
             Avro(
                 name = "Example.avsc",
                 payLoad =
@@ -197,26 +140,12 @@ class ForwardCompatibilityTest : BaseTaskTest() {
                     """.trimIndent(),
             )
 
-        // Making changes to schema
-        testProjectDir.addOrReplaceAvroFiles(schemaFileAfterChanges)
-
-        // Check compatibility
-        val checkCompatibilityTaskResult =
-            buildProject(
-                projectDir = testProjectDir,
-                arguments = arrayOf(COMPATIBILITY_CHECK_TASK_NAME, "--compatibility=$COMPATIBILITY"),
-            ).output
-
-        Assertions.assertTrue {
-            checkCompatibilityTaskResult.contains(
-                "Schema ru.rudikov.example.Example is compatible with subject $topic-value. Compatibility: $COMPATIBILITY",
-            )
-        }
+        test(afterChanges)
     }
 
     @Test
     fun `array field with default is added`() {
-        val schemaFileAfterChanges =
+        val afterChanges =
             Avro(
                 name = "Example.avsc",
                 payLoad =
@@ -247,26 +176,12 @@ class ForwardCompatibilityTest : BaseTaskTest() {
                     """.trimIndent(),
             )
 
-        // Making changes to schema
-        testProjectDir.addOrReplaceAvroFiles(schemaFileAfterChanges)
-
-        // Check compatibility
-        val checkCompatibilityTaskResult =
-            buildProject(
-                projectDir = testProjectDir,
-                arguments = arrayOf(COMPATIBILITY_CHECK_TASK_NAME, "--compatibility=$COMPATIBILITY"),
-            ).output
-
-        Assertions.assertTrue {
-            checkCompatibilityTaskResult.contains(
-                "Schema ru.rudikov.example.Example is compatible with subject $topic-value. Compatibility: $COMPATIBILITY",
-            )
-        }
+        test(afterChanges)
     }
 
     @Test
     fun `union field with default is added`() {
-        val schemaFileAfterChanges =
+        val afterChanges =
             Avro(
                 name = "Example.avsc",
                 payLoad =
@@ -290,26 +205,12 @@ class ForwardCompatibilityTest : BaseTaskTest() {
                     """.trimIndent(),
             )
 
-        // Making changes to schema
-        testProjectDir.addOrReplaceAvroFiles(schemaFileAfterChanges)
-
-        // Check compatibility
-        val checkCompatibilityTaskResult =
-            buildProject(
-                projectDir = testProjectDir,
-                arguments = arrayOf(COMPATIBILITY_CHECK_TASK_NAME, "--compatibility=$COMPATIBILITY"),
-            ).output
-
-        Assertions.assertTrue {
-            checkCompatibilityTaskResult.contains(
-                "Schema ru.rudikov.example.Example is compatible with subject $topic-value. Compatibility: $COMPATIBILITY",
-            )
-        }
+        test(afterChanges)
     }
 
     @Test
     fun `field with default is removed`() {
-        val schemaFileAfterChanges =
+        val afterChanges =
             Avro(
                 name = "Example.avsc",
                 payLoad =
@@ -331,26 +232,12 @@ class ForwardCompatibilityTest : BaseTaskTest() {
                     """.trimIndent(),
             )
 
-        // Making changes to schema
-        testProjectDir.addOrReplaceAvroFiles(schemaFileAfterChanges)
-
-        // Check compatibility
-        val checkCompatibilityTaskResult =
-            buildProject(
-                projectDir = testProjectDir,
-                arguments = arrayOf(COMPATIBILITY_CHECK_TASK_NAME, "--compatibility=$COMPATIBILITY"),
-            ).output
-
-        Assertions.assertTrue {
-            checkCompatibilityTaskResult.contains(
-                "Schema ru.rudikov.example.Example is compatible with subject $topic-value. Compatibility: $COMPATIBILITY",
-            )
-        }
+        test(afterChanges)
     }
 
     @Test
     fun `optional field becomes required`() {
-        val schemaFileAfterChanges =
+        val afterChanges =
             Avro(
                 name = "Example.avsc",
                 payLoad =
@@ -373,8 +260,34 @@ class ForwardCompatibilityTest : BaseTaskTest() {
                     """.trimIndent(),
             )
 
+        test(afterChanges)
+    }
+
+    @BeforeAll
+    fun setupProject() {
+        topic = randomString()
+        val avroWizardConfig =
+            """
+            avroWizardConfig {
+                schemaRegistryUrl.set("$schemaRegistryUrl")
+                configs {
+                    topic("$topic") {
+                        searchAvroFilePath.set("${'$'}projectDir/src/resources")
+                        schema.set("Example")
+                    }
+                }
+            }
+            """.trimIndent()
+
+        val testProject = SimpleProject(avroWizardConfig = avroWizardConfig)
+        testProjectDir = ProjectDirGenerator.generate(project = testProject, projectDir = tmp)
+        testProjectDir.addOrReplaceAvroFiles(beforeChanges)
+        buildProject(projectDir = testProjectDir, arguments = arrayOf(REGISTER_TASK_NAME))
+    }
+
+    private fun test(afterChanges: Avro) {
         // Making changes to schema
-        testProjectDir.addOrReplaceAvroFiles(schemaFileAfterChanges)
+        testProjectDir.addOrReplaceAvroFiles(afterChanges)
 
         // Check compatibility
         val checkCompatibilityTaskResult =
@@ -383,7 +296,7 @@ class ForwardCompatibilityTest : BaseTaskTest() {
                 arguments = arrayOf(COMPATIBILITY_CHECK_TASK_NAME, "--compatibility=$COMPATIBILITY"),
             ).output
 
-        Assertions.assertTrue {
+        assertTrue {
             checkCompatibilityTaskResult.contains(
                 "Schema ru.rudikov.example.Example is compatible with subject $topic-value. Compatibility: $COMPATIBILITY",
             )
@@ -394,5 +307,8 @@ class ForwardCompatibilityTest : BaseTaskTest() {
         @TempDir
         @JvmStatic
         private lateinit var tmp: File
+
+        private lateinit var topic: String
+        private lateinit var testProjectDir: File
     }
 }

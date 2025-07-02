@@ -75,11 +75,10 @@ This process is repeated for each _**topic**_ configuration.
 For each successfully registered schema, the following message is printed:
 `Registered <schema_name> with id: <id_from_registry> under subject <subject_name>`
 
-***If a schema with the same name is registered under multiple subjects, the id will be assigned to it once. See [Documentation](https://docs.confluent.io/platform/current/schema-registry/develop/using.html#register-an-existing-schema-to-a-new-subject-name)***
-
 **Notes**:
 - If no matching file is found, the task will fail with an error.
 - Each schema is registered independently for every configured topic.
+- If a schema with the same name is registered under multiple subjects, the id will be assigned to it once. See [Documentation](https://docs.confluent.io/platform/current/schema-registry/develop/using.html#register-an-existing-schema-to-a-new-subject-name)
 
 See [examples](src/test/kotlin/io/github/rudikone/avroschemawizardplugin/RegisterTaskTest.kt) in tests.
 
