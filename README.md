@@ -124,7 +124,7 @@ For each successfully registered schema, the following message is printed:
 
 See [examples](src/test/kotlin/io/github/rudikone/avroschemawizardplugin/CompatibilityTaskTest.kt) in tests.
 
-### Knowledge base
+### Knowledge base :fire: :fire: :fire:
 
 Use examples from the tests as a comprehensive knowledge base for [Schema Evolution and Compatibility](https://docs.confluent.io/platform/current/schema-registry/fundamentals/schema-evolution.html):
 - [BACKWARD](src/test/kotlin/io/github/rudikone/avroschemawizardplugin/compatibility/backward)
