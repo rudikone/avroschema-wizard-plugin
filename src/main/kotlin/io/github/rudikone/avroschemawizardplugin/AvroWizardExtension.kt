@@ -38,7 +38,11 @@ abstract class SubjectConfig(
     @get:Input
     @get:Optional
     val searchAvroFilePath: Property<String> =
-        objects.property(String::class.java).convention(project.layout.buildDirectory.get().asFile.absolutePath)
+        objects.property(String::class.java).convention(
+            project.layout.buildDirectory
+                .get()
+                .asFile.absolutePath,
+        )
 
     @get:Input
     @get:Optional

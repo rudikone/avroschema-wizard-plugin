@@ -2,6 +2,7 @@ import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import io.gitlab.arturbosch.detekt.Detekt
 import org.gradle.kotlin.dsl.withType
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -70,8 +71,8 @@ java {
 
 tasks {
     withType<KotlinCompile>().configureEach {
-        kotlinOptions {
-            jvmTarget = JavaVersion.VERSION_1_8.toString()
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_1_8)
         }
     }
 
@@ -114,7 +115,7 @@ tasks {
         dependsOn("validatePlugins")
     }
 
-    create("setupPluginUploadFromEnvironment") {
+    register("setupPluginUploadFromEnvironment") {
         doLast {
             val key = System.getenv("GRADLE_PUBLISH_KEY")
             val secret = System.getenv("GRADLE_PUBLISH_SECRET")

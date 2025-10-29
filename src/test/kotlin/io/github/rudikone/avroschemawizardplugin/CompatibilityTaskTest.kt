@@ -19,15 +19,21 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.io.TempDir
 import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.ValueSource
+import org.junit.jupiter.params.provider.CsvSource
 import java.io.File
 
 @Suppress("MaxLineLength", "LongMethod", "ktlint:standard:max-line-length")
 @DisplayName("Tests for compatibility Check. Default compatibility used: BACKWARD")
 class CompatibilityTaskTest : BaseTaskTest() {
+    // see https://docs.gradle.org/current/userguide/compatibility.html
     @ParameterizedTest
-    @ValueSource(strings = ["1.9.0", "1.9.20", "2.0.0", "2.0.20", "2.1.0"])
+    @CsvSource(
+        "8.4, 1.8.0",
+        "8.12, 1.8.0",
+        "9.0.0, 2.2.0",
+    )
     fun `schema from avsc by is compatible with the latest schema under subject`(
+        gradleVersion: String,
         kotlinVersion: String,
         @TempDir tmp: File,
     ) {
@@ -89,7 +95,8 @@ class CompatibilityTaskTest : BaseTaskTest() {
         testProjectDir.addOrReplaceAvroFiles(schemaFileBeforeChanges)
 
         // Register schema before changes
-        val registerTaskResult = buildProject(projectDir = testProjectDir, arguments = arrayOf(REGISTER_TASK_NAME))
+        val registerTaskResult =
+            buildProject(gradleVersion = gradleVersion, projectDir = testProjectDir, arguments = arrayOf(REGISTER_TASK_NAME))
         assertEquals(SUCCESS, registerTaskResult.task(":$REGISTER_TASK_NAME")?.outcome)
 
         // Making changes to schema
@@ -97,7 +104,11 @@ class CompatibilityTaskTest : BaseTaskTest() {
 
         // Check compatibility
         val checkCompatibilityTaskResult =
-            buildProject(projectDir = testProjectDir, arguments = arrayOf(COMPATIBILITY_CHECK_TASK_NAME)).output
+            buildProject(
+                gradleVersion = gradleVersion,
+                projectDir = testProjectDir,
+                arguments = arrayOf(COMPATIBILITY_CHECK_TASK_NAME),
+            ).output
 
         assertTrue {
             checkCompatibilityTaskResult.contains(
@@ -411,7 +422,10 @@ class CompatibilityTaskTest : BaseTaskTest() {
 
         assertTrue {
             buildResult.message?.contains("Compatibility test failed") == true
-            buildResult.message?.contains("Unsupported subject name strategy. Allowed: TopicNameStrategy, RecordNameStrategy, TopicRecordNameStrategy") == true
+            buildResult.message?.contains(
+                "Unsupported subject name strategy. Allowed: TopicNameStrategy, RecordNameStrategy, TopicRecordNameStrategy",
+            ) ==
+                true
         }
     }
 
@@ -591,8 +605,12 @@ class CompatibilityTaskTest : BaseTaskTest() {
 
         assertTrue {
             checkCompatibilityTaskResult.message?.contains("Compatibility test failure!") == true
-            checkCompatibilityTaskResult.message?.contains("Failed check compatibility FirstExampleRecordFromProtocol for $firstTopic") == true
-            checkCompatibilityTaskResult.message?.contains("Failed check compatibility SecondExampleRecordFromProtocol for $secondTopic!") == true
+            checkCompatibilityTaskResult.message?.contains("Failed check compatibility FirstExampleRecordFromProtocol for $firstTopic") ==
+                true
+            checkCompatibilityTaskResult.message?.contains(
+                "Failed check compatibility SecondExampleRecordFromProtocol for $secondTopic!",
+            ) ==
+                true
         }
     }
 }

@@ -17,14 +17,22 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.io.TempDir
 import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.ValueSource
+import org.junit.jupiter.params.provider.CsvSource
 import java.io.File
 
 @Suppress("MaxLineLength", "ktlint:standard:max-line-length")
 class RegisterTaskTest : BaseTaskTest() {
+    // see https://docs.gradle.org/current/userguide/compatibility.html
     @ParameterizedTest
-    @ValueSource(strings = ["1.9.0", "1.9.20", "2.0.0", "2.0.20", "2.1.0"])
-    fun `schema is registered from avsc and avpr`(kotlinVersion: String) {
+    @CsvSource(
+        "8.4, 1.8.0",
+        "8.12, 1.8.0",
+        "9.0.0, 2.2.0",
+    )
+    fun `schema is registered from avsc and avpr`(
+        gradleVersion: String,
+        kotlinVersion: String,
+    ) {
         val firstTopic = randomString()
         val secondTopic = randomString()
 
@@ -58,7 +66,7 @@ class RegisterTaskTest : BaseTaskTest() {
         testProjectDir.addOrReplaceAvroFiles(exampleProtocolFile, exampleSchemaFile)
 
         val buildResult =
-            buildProject(projectDir = testProjectDir, arguments = arrayOf(REGISTER_TASK_NAME)).output
+            buildProject(gradleVersion = gradleVersion, projectDir = testProjectDir, arguments = arrayOf(REGISTER_TASK_NAME)).output
 
         assertTrue {
             buildResult.contains(
@@ -179,7 +187,10 @@ class RegisterTaskTest : BaseTaskTest() {
         assertTrue {
             buildResult.message?.contains("Failed registerAllSchemas task!") == true
             buildResult.message?.contains("Failed register $schema for $topic") == true
-            buildResult.message?.contains("Unsupported subject name strategy. Allowed: TopicNameStrategy, RecordNameStrategy, TopicRecordNameStrategy") == true
+            buildResult.message?.contains(
+                "Unsupported subject name strategy. Allowed: TopicNameStrategy, RecordNameStrategy, TopicRecordNameStrategy",
+            ) ==
+                true
         }
     }
 

@@ -2,21 +2,25 @@
 
 package io.github.rudikone.avroschemawizardplugin.testutils
 
-open class Dependency(private val dependencyName: String) {
+open class Dependency(
+    private val dependencyName: String,
+) {
     constructor(group: String, name: String, version: String?) :
         this("\"$group:$name${version?.let { ":$version" } ?: ""}\"")
 
     override fun toString(): String = dependencyName
 }
 
-class Implementation(dependencyName: String) :
-    Dependency("implementation($dependencyName)") {
+class Implementation(
+    dependencyName: String,
+) : Dependency("implementation($dependencyName)") {
     constructor(group: String, name: String, version: String?) :
         this("\"$group:$name${version?.let { ":$version" } ?: ""}\"")
 }
 
-class TestImplementation(dependencyName: String) :
-    Dependency("testImplementation($dependencyName)") {
+class TestImplementation(
+    dependencyName: String,
+) : Dependency("testImplementation($dependencyName)") {
     constructor(group: String, name: String, version: String?) :
         this("\"$group:$name${version?.let { ":$version" } ?: ""}\"")
 }

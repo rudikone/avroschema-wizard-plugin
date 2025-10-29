@@ -35,10 +35,13 @@ private fun findAvroFileByName(
     name: String,
 ): File =
     Files.walk(Paths.get(path)).use {
-        it.filter { file ->
-            file.isRegularFile() &&
-                (file.fileName.toString() == "$name.$AVPR" || file.fileName.toString() == "$name.$AVSC")
-        }.findFirst().getOrNull()?.toFile()
+        it
+            .filter { file ->
+                file.isRegularFile() &&
+                    (file.fileName.toString() == "$name.$AVPR" || file.fileName.toString() == "$name.$AVSC")
+            }.findFirst()
+            .getOrNull()
+            ?.toFile()
     } ?: error("File $name not found!")
 
 fun String.toSubjectNameStrategy(): SubjectNameStrategy =
