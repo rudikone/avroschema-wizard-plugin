@@ -13,7 +13,8 @@ object ProjectDirGenerator {
         project: TestProject,
         projectDir: File,
     ): File {
-        projectDir.resolve("build")
+        projectDir
+            .resolve("build")
             .resolve("integrationTest")
             .resolve("projectDir")
             .also { it.mkdirs() }
@@ -25,7 +26,8 @@ object ProjectDirGenerator {
     }
 
     fun File.addOrReplaceAvroFiles(vararg avroFiles: Avro): File {
-        this.resolve("src")
+        this
+            .resolve("src")
             .resolve("resources")
             .also { it.mkdirs() }
             .also { resourcesDir ->

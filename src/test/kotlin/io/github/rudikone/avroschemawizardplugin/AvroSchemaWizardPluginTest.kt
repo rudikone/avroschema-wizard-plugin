@@ -121,7 +121,12 @@ class AvroSchemaWizardPluginTest {
 
         val subjectConfig = task.subjectConfigs.get()[topic]
 
-        assertEquals(project.layout.buildDirectory.get().asFile.absolutePath, subjectConfig!!.searchAvroFilePath.get())
+        assertEquals(
+            project.layout.buildDirectory
+                .get()
+                .asFile.absolutePath,
+            subjectConfig!!.searchAvroFilePath.get(),
+        )
         assertEquals(DEFAULT_SUBJECT_NAME_STRATEGY, subjectConfig.subjectNameStrategy.get())
     }
 
@@ -173,7 +178,12 @@ class AvroSchemaWizardPluginTest {
 
         val subjectConfig = task.subjectConfigs.get()[topic]
 
-        assertEquals(project.layout.buildDirectory.get().asFile.absolutePath, subjectConfig!!.searchAvroFilePath.get())
+        assertEquals(
+            project.layout.buildDirectory
+                .get()
+                .asFile.absolutePath,
+            subjectConfig!!.searchAvroFilePath.get(),
+        )
         assertEquals(DEFAULT_SUBJECT_NAME_STRATEGY, subjectConfig.subjectNameStrategy.get())
     }
 

@@ -27,8 +27,7 @@ abstract class BaseTaskTest {
                 .withEnv(
                     "SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS",
                     "PLAINTEXT://${kafkaContainer.networkAliases[0]}:9092",
-                )
-                .withEnv("SCHEMA_REGISTRY_LISTENERS", "http://0.0.0.0:8081")
+                ).withEnv("SCHEMA_REGISTRY_LISTENERS", "http://0.0.0.0:8081")
                 .waitingFor(Wait.forHealthcheck())
                 .waitingFor(Wait.forHttp("/subjects").forStatusCode(200))
                 .dependsOn(kafkaContainer)

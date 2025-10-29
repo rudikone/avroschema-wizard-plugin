@@ -12,6 +12,12 @@ plugin streamlines the integration of Avro schemas, enhancing your local testing
 in integration tests and CI pipelines. Use it now to effortlessly manage enrollment and schema validation in your Kafka
 ecosystem!
 
+**See full documentation on** [DeepWiki](https://deepwiki.com/rudikone/avroschema-wizard-plugin/1-overview)
+
+## Minimal supported versions
+
+Minimal supported Gradle version: 8.4
+
 ## Use cases
 
 The plugin simplifies kafka consumer testing when using avro schemas, and also provides additional features such as

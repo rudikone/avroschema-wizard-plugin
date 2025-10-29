@@ -61,7 +61,8 @@ abstract class CompatibilityCheckTask : DefaultTask() {
     private fun testForSchema(client: SchemaRegistryClient) {
         val schemaName = schemaForCheck.get()
         val config =
-            subjectConfigs.get()
+            subjectConfigs
+                .get()
                 .values
                 .find { it.schema.get() == schemaName }
                 ?: error("No configuration found for schema $schemaName in avroWizardConfig")
