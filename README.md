@@ -16,8 +16,8 @@ ecosystem!
 
 ## Minimal supported versions
 
-Minimal supported Gradle version: 8.4
-Minimal supported Java version: 17
+- Minimal supported Gradle version: 8.4
+- Minimal supported Java version: 17
 
 ## Use cases
 
