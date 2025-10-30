@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout latest code
-        uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # https://github.com/actions/checkout
+        uses: actions/checkout@v5 # https://github.com/actions/checkout
       - name: Validate Gradle Wrapper
-        uses: gradle/wrapper-validation-action@v1 # https://github.com/gradle/wrapper-validation-action
+        uses: gradle/actions/wrapper-validation@v5 # https://github.com/gradle/wrapper-validation-action
 
