@@ -13,13 +13,13 @@ abstract class BaseTaskTest {
     companion object {
         private val network = Network.newNetwork()
 
-        val kafkaContainer =
-            KafkaContainer("apache/kafka-native:3.8.0")
+        val kafkaContainer: KafkaContainer =
+            KafkaContainer("apache/kafka-native:4.0.1")
                 .withNetwork(network)
                 .withListener("kafka:19092")
 
         private val schemaRegistryContainer =
-            GenericContainer(DockerImageName.parse("confluentinc/cp-schema-registry:7.5.1"))
+            GenericContainer(DockerImageName.parse("confluentinc/cp-schema-registry:8.1.0"))
                 .dependsOn(kafkaContainer)
                 .withExposedPorts(8085)
                 .withNetworkAliases("schemaregistry")
