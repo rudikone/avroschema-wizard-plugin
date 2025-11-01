@@ -160,6 +160,7 @@ class RegisterTaskTest : BaseTaskTest() {
     @Test
     fun `unsupported subject name strategy exception thrown`() {
         val topic = randomString()
+        val exampleSchemaFile = exampleSchema()
         val schema = "Example"
 
         val avroWizardConfig =
@@ -178,6 +179,7 @@ class RegisterTaskTest : BaseTaskTest() {
 
         val testProject = SimpleProject(avroWizardConfig = avroWizardConfig)
         val testProjectDir = ProjectDirGenerator.generate(project = testProject, projectDir = tmp)
+        testProjectDir.addOrReplaceAvroFiles(exampleSchemaFile)
 
         val buildResult =
             assertThrows<UnexpectedBuildFailure> {

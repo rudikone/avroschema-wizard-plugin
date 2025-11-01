@@ -48,9 +48,9 @@ abstract class CompatibilityCheckTask : DefaultTask() {
             val client = CachedSchemaRegistryClient(schemaRegistryUrl.get(), 1)
 
             if (subject.isPresent && schemaForCheck.isPresent) {
-                client.use { testForSchema(it) }
+                client.use { testForConcreteSchema(it) }
             } else {
-                client.use { testForConfigs(it) }
+                client.use { testForAllSchemas(it) }
             }
         }.onFailure {
             logger.error("Compatibility test failed", it)
@@ -58,7 +58,7 @@ abstract class CompatibilityCheckTask : DefaultTask() {
         }
     }
 
-    private fun testForSchema(client: SchemaRegistryClient) {
+    private fun testForConcreteSchema(client: SchemaRegistryClient) {
         val schemaName = schemaForCheck.get()
         val config =
             subjectConfigs
@@ -70,13 +70,14 @@ abstract class CompatibilityCheckTask : DefaultTask() {
         testCompatibility(client, schema, subject.get())
     }
 
-    private fun testForConfigs(client: SchemaRegistryClient) {
+    private fun testForAllSchemas(client: SchemaRegistryClient) {
         var allSuccess = true
+        val fileCache = buildFileCache(subjectConfigs.get().values)
 
         subjectConfigs.get().forEach { (topic, config) ->
             runCatching {
                 val nameStrategy = config.subjectNameStrategy.get().toSubjectNameStrategy()
-                val schema = generateSchema(config)
+                val schema = generateSchema(config, fileCache)
                 val subject = nameStrategy.subjectName(topic, false, schema)
                 testCompatibility(client, schema, subject)
             }.onFailure {

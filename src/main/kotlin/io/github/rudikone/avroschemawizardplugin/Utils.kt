@@ -11,11 +11,48 @@ import java.io.File
 import java.io.FileInputStream
 import java.nio.file.Files
 import java.nio.file.Paths
+import kotlin.io.path.extension
 import kotlin.io.path.isRegularFile
 import kotlin.jvm.optionals.getOrNull
 
 const val AVPR = "avpr"
 const val AVSC = "avsc"
+
+fun buildFileCache(configs: Collection<SubjectConfig>): Map<String, File> {
+    val uniquePaths = configs.map { it.searchAvroFilePath.get() }.distinct()
+    val fileCache = mutableMapOf<String, File>()
+
+    uniquePaths.forEach { path ->
+        Files.walk(Paths.get(path)).use { stream ->
+            stream
+                .filter { it.isRegularFile() }
+                .filter { file -> file.extension == AVSC || file.extension == AVPR }
+                .forEach { file ->
+                    fileCache[file.fileName.toString()] = file.toFile()
+                }
+        }
+    }
+    return fileCache
+}
+
+fun generateSchema(
+    config: SubjectConfig,
+    fileCache: Map<String, File>,
+): AvroSchema {
+    val fileName = config.protocol.orNull ?: config.schema.get()
+    val avroFile =
+        fileCache["$fileName.$AVPR"]
+            ?: fileCache["$fileName.$AVSC"]
+            ?: error("File $fileName not found!")
+
+    return FileInputStream(avroFile).use { fis ->
+        if (avroFile.extension == AVSC) {
+            AvroSchema(Schema.Parser().parse(fis))
+        } else {
+            AvroSchema(Protocol.parse(fis).getType(config.schema.get()))
+        }
+    }
+}
 
 fun generateSchema(config: SubjectConfig): AvroSchema {
     val fileName = config.protocol.orNull ?: config.schema.get()

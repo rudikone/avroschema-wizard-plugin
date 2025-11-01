@@ -398,6 +398,22 @@ class CompatibilityTaskTest : BaseTaskTest() {
     ) {
         val topic = randomString()
 
+        val schemaFile =
+            Avro(
+                name = "Example.avsc",
+                payLoad =
+                    """
+                    {
+                        "type": "record",
+                        "namespace": "ru.rudikov.example",
+                        "name": "Example",
+                        "fields": [
+                            { "name": "Age", "type": "int" }
+                        ]
+                    }
+                    """.trimIndent(),
+            )
+
         val avroWizardConfig =
             """
             avroWizardConfig {
@@ -414,6 +430,7 @@ class CompatibilityTaskTest : BaseTaskTest() {
 
         val testProject = SimpleProject(avroWizardConfig = avroWizardConfig)
         val testProjectDir = ProjectDirGenerator.generate(project = testProject, projectDir = tmp)
+        testProjectDir.addOrReplaceAvroFiles(schemaFile)
 
         val buildResult =
             assertThrows<UnexpectedBuildFailure> {

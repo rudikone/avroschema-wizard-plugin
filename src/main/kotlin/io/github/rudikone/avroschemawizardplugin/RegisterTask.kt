@@ -30,12 +30,14 @@ abstract class RegisterTask : DefaultTask() {
             val registryClient = CachedSchemaRegistryClient(schemaRegistryUrl.get(), 1)
             var allSuccess = true
 
+            val fileCache = buildFileCache(subjectConfigs.get().values)
+
             registryClient.use { client ->
                 subjectConfigs.get().forEach { (topic, config) ->
                     var subject: String? = null
                     runCatching {
                         val nameStrategy = config.subjectNameStrategy.get().toSubjectNameStrategy()
-                        val schema = generateSchema(config)
+                        val schema = generateSchema(config, fileCache)
                         subject = nameStrategy.subjectName(topic, false, schema)
                         client.register(subject, schema)
                     }.onSuccess {
