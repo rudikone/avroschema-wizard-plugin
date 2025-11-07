@@ -13,7 +13,7 @@ plugin streamlines the integration of Avro schemas, enhancing your local testing
 in integration tests and CI pipelines. Use it now to effortlessly manage enrollment and schema validation in your Kafka
 ecosystem!
 
-**See full documentation on** [DeepWiki](https://deepwiki.com/rudikone/avroschema-wizard-plugin/1-overview)
+**See full documentation on** [DeepWiki](https://deepwiki.com/rudikone/avroschema-wizard-plugin/)
 
 ## Minimal supported versions
 
