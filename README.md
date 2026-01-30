@@ -15,10 +15,12 @@ ecosystem!
 
 **See full documentation on** [DeepWiki](https://deepwiki.com/rudikone/avroschema-wizard-plugin/)
 
-## Minimal supported versions
+## Version Matrix
 
 - Minimal supported Gradle version: 8.4
 - Minimal supported Java version: 17
+- io.confluent:kafka-schema-registry-client: 8.1.1
+- io.confluent:kafka-schema-serializer: 8.1.1
 
 ## Use cases
 
@@ -132,7 +134,9 @@ For each successfully registered schema, the following message is printed:
 
 See [examples](src/test/kotlin/io/github/rudikone/avroschemawizardplugin/CompatibilityTaskTest.kt) in tests.
 
-### Knowledge base :fire: :fire: :fire:
+### Knowledge base
+
+:fire: :fire: :fire:
 
 Use examples from the tests as a comprehensive knowledge base for [Schema Evolution and Compatibility](https://docs.confluent.io/platform/current/schema-registry/fundamentals/schema-evolution.html):
 - [BACKWARD](src/test/kotlin/io/github/rudikone/avroschemawizardplugin/compatibility/backward)
