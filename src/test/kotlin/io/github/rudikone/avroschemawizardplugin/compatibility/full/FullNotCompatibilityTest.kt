@@ -74,7 +74,10 @@ class FullNotCompatibilityTest : BaseTaskTest() {
                     """.trimIndent(),
             )
 
-        test(afterChanges)
+        test(
+            afterChanges = afterChanges,
+            message = "description:'The type (path '/fields/0/type') of a field in the old schema does not match with the new schema', additionalInfo:'reader type: INT not compatible with writer type: LONG'",
+        )
     }
 
     @Test
@@ -103,7 +106,10 @@ class FullNotCompatibilityTest : BaseTaskTest() {
                     """.trimIndent(),
             )
 
-        test(afterChanges)
+        test(
+            afterChanges = afterChanges,
+            message = "description:'The new schema is missing enum symbols '[FEMALE]' at path '/fields/3/type/symbols' in the old schema', additionalInfo:'[FEMALE]'",
+        )
     }
 
     @Test
@@ -132,7 +138,10 @@ class FullNotCompatibilityTest : BaseTaskTest() {
                     """.trimIndent(),
             )
 
-        test(afterChanges)
+        test(
+            afterChanges = afterChanges,
+            message = "description:'The type (path '/') of a field in the new schema does not match with the old schema', additionalInfo:'reader type: STRING not compatible with writer type: NULL'",
+        )
     }
 
     @Test
@@ -160,7 +169,10 @@ class FullNotCompatibilityTest : BaseTaskTest() {
                     """.trimIndent(),
             )
 
-        test(afterChanges)
+        test(
+            afterChanges = afterChanges,
+            message = "description:'The field 'LastName' at path '/fields/2' in the old schema has no default value and is missing in the new schema', additionalInfo:'LastName'",
+        )
     }
 
     @Test
@@ -189,7 +201,10 @@ class FullNotCompatibilityTest : BaseTaskTest() {
                     """.trimIndent(),
             )
 
-        test(afterChanges)
+        test(
+            afterChanges = afterChanges,
+            message = "description:'The type (path '/') of a field in the old schema does not match with the new schema', additionalInfo:'reader type: INT not compatible with writer type: NULL'",
+        )
     }
 
     @Test
@@ -218,7 +233,10 @@ class FullNotCompatibilityTest : BaseTaskTest() {
                     """.trimIndent(),
             )
 
-        test(afterChanges)
+        test(
+            afterChanges = afterChanges,
+            message = "description:'The old schema is missing a type inside a union field at path '/fields/1/type/2' in the new schema', additionalInfo:'reader union lacking writer type: INT'",
+        )
     }
 
     @Test
@@ -248,7 +266,10 @@ class FullNotCompatibilityTest : BaseTaskTest() {
                     """.trimIndent(),
             )
 
-        test(afterChanges)
+        test(
+            afterChanges = afterChanges,
+            message = "description:'The field 'MiddleName' at path '/fields/4' in the new schema has no default value and is missing in the old schema', additionalInfo:'MiddleName'",
+        )
     }
 
     @Test
@@ -277,7 +298,10 @@ class FullNotCompatibilityTest : BaseTaskTest() {
                     """.trimIndent(),
             )
 
-        test(afterChanges)
+        test(
+            afterChanges = afterChanges,
+            message = "description:'The old schema is missing enum symbols '[OTHER]' at path '/fields/3/type/symbols' in the new schema', additionalInfo:'[OTHER]'",
+        )
     }
 
     @BeforeAll
@@ -302,7 +326,10 @@ class FullNotCompatibilityTest : BaseTaskTest() {
         buildProject(projectDir = testProjectDir, arguments = arrayOf(REGISTER_TASK_NAME))
     }
 
-    private fun test(afterChanges: Avro) {
+    private fun test(
+        afterChanges: Avro,
+        message: String,
+    ) {
         // Making changes to schema
         testProjectDir.addOrReplaceAvroFiles(afterChanges)
 
@@ -317,6 +344,7 @@ class FullNotCompatibilityTest : BaseTaskTest() {
             checkCompatibilityTaskResult.contains(
                 "Schema ru.rudikov.example.Example is not compatible with subject $topic-value. Compatibility: $COMPATIBILITY",
             )
+            checkCompatibilityTaskResult.contains(message)
         }
     }
 

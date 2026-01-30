@@ -74,10 +74,14 @@ The `registerAllSchemas` task registers Avro schemas in the Schema Registry base
 ```
 
 **How It Works**:
+
 - For each _**topic()**_ configuration:
-    - If the **_protocol_** property is set, the task searches for a .avpr file with the name specified by **_protocol_** in the directory specified by **_searchAvroFilePath_**.
-    - If only the **_schema_** property is set (and **_protocol_** is not), the task searches for a .avsc file with the name specified by **_schema_** in the **_searchAvroFilePath_** directory.
-- The found schema is registered under the **_topic_** name (the name of the configuration) using the specified **_subjectNameStrategy_**.
+    - If the **_protocol_** property is set, the task searches for a .avpr file with the name specified by
+      **_protocol_** in the directory specified by **_searchAvroFilePath_**.
+    - If only the **_schema_** property is set (and **_protocol_** is not), the task searches for a .avsc file with the
+      name specified by **_schema_** in the **_searchAvroFilePath_** directory.
+- The found schema is registered under the **_topic_** name (the name of the configuration) using the specified
+  **_subjectNameStrategy_**.
 
 This process is repeated for each _**topic**_ configuration.
 
@@ -86,15 +90,18 @@ For each successfully registered schema, the following message is printed:
 `Registered <schema_name> with id: <id_from_registry> under subject <subject_name>`
 
 **Notes**:
+
 - If no matching file is found, the task will fail with an error.
 - Each schema is registered independently for every configured topic.
-- If a schema with the same name is registered under multiple subjects, the id will be assigned to it once. See [Documentation](https://docs.confluent.io/platform/current/schema-registry/develop/using.html#register-an-existing-schema-to-a-new-subject-name)
+- If a schema with the same name is registered under multiple subjects, the id will be assigned to it once.
+  See [Documentation](https://docs.confluent.io/platform/current/schema-registry/develop/using.html#register-an-existing-schema-to-a-new-subject-name)
 
 See [examples](src/test/kotlin/io/github/rudikone/avroschemawizardplugin/RegisterTaskTest.kt) in tests.
 
 ### Compatibility check:
 
-The `checkCompatibility` task verifies if your Avro schemas are compatible with the latest registered schema under a given subject in the Schema Registry.
+The `checkCompatibility` task verifies if your Avro schemas are compatible with the latest registered schema under a
+given subject in the Schema Registry.
 
 **Batch Mode (for all topics)**
 
@@ -103,14 +110,18 @@ The `checkCompatibility` task verifies if your Avro schemas are compatible with 
 ```
 
 **How It Works**:
+
 - For each _**topic()**_ configuration:
-    - If the **_protocol_** property is set, the task searches for a .avpr file with the name specified by **_protocol_** in the **_searchAvroFilePath_** directory.
-    - If only the **_schema_** property is set (and **_protocol_** is not), the task searches for a .avsc file with the name specified by **_schema_** in the **_searchAvroFilePath_** directory.
-- The found schema is checked for compatibility with the subject, which is derived from the **_topic_** name and **_subjectNameStrategy_**.
-- The specified **_compatibility_** level is used for the check (if provided); otherwise, the default compatibility level is used.
+    - If the **_protocol_** property is set, the task searches for a .avpr file with the name specified by
+      **_protocol_** in the **_searchAvroFilePath_** directory.
+    - If only the **_schema_** property is set (and **_protocol_** is not), the task searches for a .avsc file with the
+      name specified by **_schema_** in the **_searchAvroFilePath_** directory.
+- The found schema is checked for compatibility with the subject, which is derived from the **_topic_** name and
+  **_subjectNameStrategy_**.
+- The specified **_compatibility_** level is used for the check (if provided); otherwise, the default compatibility
+  level is used.
 
 This process is repeated for each **_topic_** configuration.
-
 
 **Single Subject/Schema Mode**
 
@@ -119,17 +130,29 @@ This process is repeated for each **_topic_** configuration.
 ```
 
 **How It Works**:
+
 - The task searches for the **_topic_** configuration with the given **_schema_** name.
-- If **_protocol_** is set in the configuration, it looks for a .avpr file; otherwise, it looks for a .avsc file as described above.
+- If **_protocol_** is set in the configuration, it looks for a .avpr file; otherwise, it looks for a .avsc file as
+  described above.
 - The found schema is checked for compatibility with the specified **_subject_**.
-- The specified **_compatibility_** level is used for the check (if provided); otherwise, the default compatibility level is used.
+- The specified **_compatibility_** level is used for the check (if provided); otherwise, the default compatibility
+  level is used.
 - If the **_subject_** does not exist in the Schema Registry, the task will fail with an error.
 
 **Output**:
 For each successfully registered schema, the following message is printed:
 `Schema <schema_name> is (not) compatible with subject <subject_name>. Compatibility: <compatibility>`
 
+_Optional_:
+If new schema (reader) is not compatible with old schema (writer), the following message is printed (example):
+
+```
+ -> {errorType:'TYPE_MISMATCH', description:'The type (path '/fields/0/type') of a field in the new schema does not
+    match with the old schema', additionalInfo:'reader type: STRING not compatible with writer type: INT'}
+```
+
 **Notes**:
+
 - If no matching file is found for the schema, the task will fail with an error.
 
 See [examples](src/test/kotlin/io/github/rudikone/avroschemawizardplugin/CompatibilityTaskTest.kt) in tests.
@@ -138,7 +161,9 @@ See [examples](src/test/kotlin/io/github/rudikone/avroschemawizardplugin/Compati
 
 :fire: :fire: :fire:
 
-Use examples from the tests as a comprehensive knowledge base for [Schema Evolution and Compatibility](https://docs.confluent.io/platform/current/schema-registry/fundamentals/schema-evolution.html):
+Use examples from the tests as a comprehensive knowledge base
+for [Schema Evolution and Compatibility](https://docs.confluent.io/platform/current/schema-registry/fundamentals/schema-evolution.html):
+
 - [BACKWARD](src/test/kotlin/io/github/rudikone/avroschemawizardplugin/compatibility/backward)
 - [FORWARD](src/test/kotlin/io/github/rudikone/avroschemawizardplugin/compatibility/forward)
 - [FULL](src/test/kotlin/io/github/rudikone/avroschemawizardplugin/compatibility/full)

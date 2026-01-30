@@ -72,7 +72,10 @@ class ForwardNotCompatibilityTest : BaseTaskTest() {
                     """.trimIndent(),
             )
 
-        test(afterChanges)
+        test(
+            afterChanges = afterChanges,
+            message = "description:'The type (path '/fields/0/type') of a field in the old schema does not match with the new schema', additionalInfo:'reader type: INT not compatible with writer type: LONG'",
+        )
     }
 
     @Test
@@ -87,7 +90,7 @@ class ForwardNotCompatibilityTest : BaseTaskTest() {
                         "namespace": "ru.rudikov.example",
                         "name": "Example",
                         "fields": [
-                            { "name": "Age", "type": "long", "default": 0 },
+                            { "name": "Age", "type": "int", "default": 0 },
                             {
                                 "name": "Gender",
                                 "type": {
@@ -99,7 +102,10 @@ class ForwardNotCompatibilityTest : BaseTaskTest() {
                     """.trimIndent(),
             )
 
-        test(afterChanges)
+        test(
+            afterChanges = afterChanges,
+            message = "description:'The field 'Name' at path '/fields/1' in the old schema has no default value and is missing in the new schema', additionalInfo:'Name'",
+        )
     }
 
     @Test
@@ -127,7 +133,10 @@ class ForwardNotCompatibilityTest : BaseTaskTest() {
                     """.trimIndent(),
             )
 
-        test(afterChanges)
+        test(
+            afterChanges = afterChanges,
+            message = "description:'The old schema is missing enum symbols '[OTHER]' at path '/fields/2/type/symbols' in the new schema', additionalInfo:'[OTHER]'",
+        )
     }
 
     @Test
@@ -155,7 +164,10 @@ class ForwardNotCompatibilityTest : BaseTaskTest() {
                     """.trimIndent(),
             )
 
-        test(afterChanges)
+        test(
+            afterChanges = afterChanges,
+            message = "description:'The old schema is missing a type inside a union field at path '/fields/1/type/2' in the new schema', additionalInfo:'reader union lacking writer type: INT'",
+        )
     }
 
     @Test
@@ -183,7 +195,10 @@ class ForwardNotCompatibilityTest : BaseTaskTest() {
                     """.trimIndent(),
             )
 
-        test(afterChanges)
+        test(
+            afterChanges = afterChanges,
+            message = "description:'The type (path '/') of a field in the old schema does not match with the new schema', additionalInfo:'reader type: INT not compatible with writer type: NULL'",
+        )
     }
 
     @BeforeAll
@@ -208,7 +223,10 @@ class ForwardNotCompatibilityTest : BaseTaskTest() {
         buildProject(projectDir = testProjectDir, arguments = arrayOf(REGISTER_TASK_NAME))
     }
 
-    private fun test(afterChanges: Avro) {
+    private fun test(
+        afterChanges: Avro,
+        message: String,
+    ) {
         // Making changes to schema
         testProjectDir.addOrReplaceAvroFiles(afterChanges)
 
@@ -223,6 +241,7 @@ class ForwardNotCompatibilityTest : BaseTaskTest() {
             checkCompatibilityTaskResult.contains(
                 "Schema ru.rudikov.example.Example is not compatible with subject $topic-value. Compatibility: $COMPATIBILITY",
             )
+            checkCompatibilityTaskResult.contains(message)
         }
     }
 

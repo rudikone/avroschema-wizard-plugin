@@ -72,7 +72,10 @@ class BackwardNotCompatibilityTest : BaseTaskTest() {
                     """.trimIndent(),
             )
 
-        test(afterChanges)
+        test(
+            afterChanges = afterChanges,
+            message = "reader type: STRING not compatible with writer type: INT",
+        )
     }
 
     @Test
@@ -87,7 +90,7 @@ class BackwardNotCompatibilityTest : BaseTaskTest() {
                         "namespace": "ru.rudikov.example",
                         "name": "Example",
                         "fields": [
-                            { "name": "Age", "type": "string", "default": "0" },
+                            { "name": "Age", "type": "int", "default": 0 },
                             { "name": "Name", "type": ["null", "string"] },
                             {
                                 "name": "Gender",
@@ -100,7 +103,10 @@ class BackwardNotCompatibilityTest : BaseTaskTest() {
                     """.trimIndent(),
             )
 
-        test(afterChanges)
+        test(
+            afterChanges = afterChanges,
+            message = "The new schema is missing enum symbols '[FEMALE]' at path '/fields/2/type/symbols' in the old schema', additionalInfo:'[FEMALE]",
+        )
     }
 
     @Test
@@ -128,7 +134,10 @@ class BackwardNotCompatibilityTest : BaseTaskTest() {
                     """.trimIndent(),
             )
 
-        test(afterChanges)
+        test(
+            afterChanges = afterChanges,
+            message = "The type (path '/') of a field in the new schema does not match with the old schema', additionalInfo:'reader type: STRING not compatible with writer type: NULL",
+        )
     }
 
     @Test
@@ -157,7 +166,10 @@ class BackwardNotCompatibilityTest : BaseTaskTest() {
                     """.trimIndent(),
             )
 
-        test(afterChanges)
+        test(
+            afterChanges = afterChanges,
+            message = "The field 'LastName' at path '/fields/3' in the new schema has no default value and is missing in the old schema', additionalInfo:'LastName'",
+        )
     }
 
     @BeforeAll
@@ -182,7 +194,10 @@ class BackwardNotCompatibilityTest : BaseTaskTest() {
         buildProject(projectDir = testProjectDir, arguments = arrayOf(REGISTER_TASK_NAME))
     }
 
-    private fun test(afterChanges: Avro) {
+    private fun test(
+        afterChanges: Avro,
+        message: String,
+    ) {
         // Making changes to schema
         testProjectDir.addOrReplaceAvroFiles(afterChanges)
 
@@ -197,6 +212,7 @@ class BackwardNotCompatibilityTest : BaseTaskTest() {
             checkCompatibilityTaskResult.contains(
                 "Schema ru.rudikov.example.Example is not compatible with subject $topic-value. Compatibility: $COMPATIBILITY",
             )
+            checkCompatibilityTaskResult.contains(message)
         }
     }
 
