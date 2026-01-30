@@ -1,13 +1,13 @@
 [versions]
 detekt = "1.23.8"
-ktlintGradle = "13.1.0"
+ktlintGradle = "14.0.1"
 pluginPublish = "2.0.0"
 versionCheck = "0.53.0"
-junit = "6.0.0"
-schemaRegistryClient = "8.1.0"
-kafkaSchemaSerializer = "8.1.0"
-shadow = "9.2.2"
-testcontainers = "2.0.1"
+junit = "6.0.2"
+schemaRegistryClient = "8.1.1"
+kafkaSchemaSerializer = "8.1.1"
+shadow = "9.3.1"
+testcontainers = "2.0.3"
 
 [plugins]
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt"}
