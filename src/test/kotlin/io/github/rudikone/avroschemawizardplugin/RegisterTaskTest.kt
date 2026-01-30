@@ -327,7 +327,8 @@ class RegisterTaskTest : BaseTaskTest() {
     @Disabled(
         """
         Disabled after migration to 8.1.1 version for
-        io.confluent:kafka-schema-registry-client and io.confluent:kafka-schema-serializer
+        io.confluent:kafka-schema-registry-client and io.confluent:kafka-schema-serializer.
+        See https://github.com/confluentinc/schema-registry/issues/4112
     """,
     )
     fun `invalid default exception thrown`() {
