@@ -16,8 +16,6 @@ class Plugin(
 
 private const val DEFAULT_KOTLIN_VERSION = "1.9.20"
 
-// See build.gradle.kts tasks.test
-fun avroSchemaWizard(version: String? = System.getenv("avroschema-wizard-plugin-version")) =
-    Plugin("io.github.rudikone.avroschema-wizard-plugin", version)
+fun avroSchemaWizard(version: String? = null) = Plugin("io.github.rudikone.avroschema-wizard-plugin", version)
 
 fun kotlinJvm(version: String? = DEFAULT_KOTLIN_VERSION) = Plugin("org.jetbrains.kotlin.jvm", version)

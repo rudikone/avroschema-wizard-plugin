@@ -8,7 +8,9 @@ import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.TaskExecutionException
+import org.gradle.api.tasks.UntrackedTask
 
+@UntrackedTask(because = "Registers schemas in external Schema Registry")
 abstract class RegisterTask : DefaultTask() {
     init {
         description = "Register all schemas"
@@ -24,6 +26,8 @@ abstract class RegisterTask : DefaultTask() {
 
     @TaskAction
     fun registerAllSchemas() {
+        logStart(logger)
+
         runCatching {
             if (subjectConfigs.orNull.isNullOrEmpty()) error("Topic configs is empty!")
 
