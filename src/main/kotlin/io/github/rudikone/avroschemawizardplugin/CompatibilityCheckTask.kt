@@ -10,8 +10,10 @@ import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.TaskExecutionException
+import org.gradle.api.tasks.UntrackedTask
 import org.gradle.api.tasks.options.Option
 
+@UntrackedTask(because = "Checks schemas in external Schema Registry")
 abstract class CompatibilityCheckTask : DefaultTask() {
     init {
         description = "Test compatibility of a schema with the latest schema under subject"
@@ -42,6 +44,8 @@ abstract class CompatibilityCheckTask : DefaultTask() {
 
     @TaskAction
     fun checkCompatibility() {
+        logStart(logger)
+
         runCatching {
             if (subjectConfigs.orNull.isNullOrEmpty()) error("Subject configs must not be empty")
 

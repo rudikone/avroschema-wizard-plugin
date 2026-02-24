@@ -19,6 +19,7 @@ fun buildProject(
     GradleRunner
         .create()
         .withGradleVersion(gradleVersion)
+        .withPluginClasspath()
         .withProjectDir(projectDir)
         .withEnvironment(System.getenv())
         .withArguments(listOf("--build-cache", "-i", "-s", *arguments))

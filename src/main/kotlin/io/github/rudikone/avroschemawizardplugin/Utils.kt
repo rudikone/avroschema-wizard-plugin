@@ -7,6 +7,7 @@ import io.confluent.kafka.serializers.subject.TopicRecordNameStrategy
 import io.confluent.kafka.serializers.subject.strategy.SubjectNameStrategy
 import org.apache.avro.Protocol
 import org.apache.avro.Schema
+import org.gradle.api.logging.Logger
 import java.io.File
 import java.io.FileInputStream
 import java.nio.file.Files
@@ -91,3 +92,15 @@ fun String.toSubjectNameStrategy(): SubjectNameStrategy =
                 "Unsupported subject name strategy. Allowed: ${SubjectNameStrategies.values().joinToString()}",
             )
     }
+
+fun logStart(logger: Logger) {
+    logger.lifecycle(
+        """
+           _               __      ___                _
+          /_\__ ___ _ ___  \ \    / (_)_____ _ _ _ __| |
+         / _ \ V / '_/ _ \  \ \/\/ /| |_ / _` | '_/ _` |
+        /_/ \_\_/|_| \___/   \_/\_/ |_/__\__,_|_| \__,_|
+
+        """.trimIndent(),
+    )
+}

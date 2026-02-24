@@ -64,8 +64,6 @@ dependencies {
     implementation(platform(libs.testcontainersBom))
     testImplementation(libs.testcontainers)
     testImplementation(libs.testcontainersKafka)
-    testImplementation(libs.testcontainersJunitJupiter)
-
     testImplementation(kotlin("test"))
 }
 
@@ -117,15 +115,8 @@ tasks {
         }
     }
 
-    /*
-     * It is needed to ensure that tests always verify the current version of the plugin.
-     * See io.github.rudikone.avroschemawizardplugin.RegisterTaskTest and io.github.rudikone.avroschemawizardplugin.testutils.Plugin
-     */
     test {
-        dependsOn(publishToMavenLocal)
-        useJUnitPlatform {
-            environment.putIfAbsent("avroschema-wizard-plugin-version", project.version)
-        }
+        useJUnitPlatform()
     }
 
     named("shadowJar", ShadowJar::class) {
@@ -213,7 +204,7 @@ tasks {
     }
 
     wrapper {
-        distributionType = Wrapper.DistributionType.ALL
+        distributionType = Wrapper.DistributionType.BIN
     }
 }
 
