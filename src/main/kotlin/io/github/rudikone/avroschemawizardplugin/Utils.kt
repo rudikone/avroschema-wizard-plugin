@@ -9,22 +9,24 @@ import org.apache.avro.Protocol
 import org.apache.avro.Schema
 import org.gradle.api.logging.Logger
 import java.io.File
-import java.io.FileInputStream
 import java.nio.file.Files
 import java.nio.file.Paths
 import kotlin.io.path.extension
 import kotlin.io.path.isRegularFile
-import kotlin.jvm.optionals.getOrNull
 
 const val AVPR = "avpr"
 const val AVSC = "avsc"
 
-fun buildFileCache(configs: Collection<SubjectConfig>): Map<String, File> {
-    val uniquePaths = configs.map { it.searchAvroFilePath.get() }.distinct()
+fun buildFileCache(specs: Collection<SubjectSpec>): Map<String, File> {
+    val uniquePaths = specs.map { it.searchAvroFilePath }.distinct()
     val fileCache = mutableMapOf<String, File>()
 
     uniquePaths.forEach { path ->
-        Files.walk(Paths.get(path)).use { stream ->
+        val dir = Paths.get(path)
+        require(Files.isDirectory(dir)) {
+            "Avro search path does not exist or is not a directory: $path"
+        }
+        Files.walk(dir).use { stream ->
             stream
                 .filter { it.isRegularFile() }
                 .filter { file -> file.extension == AVSC || file.extension == AVPR }
@@ -33,64 +35,35 @@ fun buildFileCache(configs: Collection<SubjectConfig>): Map<String, File> {
                 }
         }
     }
+
     return fileCache
 }
 
 fun generateSchema(
-    config: SubjectConfig,
+    spec: SubjectSpec,
     fileCache: Map<String, File>,
 ): AvroSchema {
-    val fileName = config.protocol.orNull ?: config.schema.get()
+    val fileName = spec.protocol ?: spec.schema
     val avroFile =
         fileCache["$fileName.$AVPR"]
             ?: fileCache["$fileName.$AVSC"]
-            ?: error("File $fileName not found!")
+            ?: error("File $fileName not found in configured search path(s)!")
 
-    return FileInputStream(avroFile).use { fis ->
+    return avroFile.inputStream().use { fis ->
         if (avroFile.extension == AVSC) {
             AvroSchema(Schema.Parser().parse(fis))
         } else {
-            AvroSchema(Protocol.parse(fis).getType(config.schema.get()))
+            AvroSchema(Protocol.parse(fis).getType(spec.schema))
         }
     }
 }
-
-fun generateSchema(config: SubjectConfig): AvroSchema {
-    val fileName = config.protocol.orNull ?: config.schema.get()
-    val avroFile = findAvroFileByName(path = config.searchAvroFilePath.get(), name = fileName)
-
-    return FileInputStream(avroFile).use { fis ->
-        if (avroFile.extension == AVSC) {
-            AvroSchema(Schema.Parser().parse(fis))
-        } else {
-            AvroSchema(Protocol.parse(fis).getType(config.schema.get()))
-        }
-    }
-}
-
-private fun findAvroFileByName(
-    path: String,
-    name: String,
-): File =
-    Files.walk(Paths.get(path)).use {
-        it
-            .filter { file ->
-                file.isRegularFile() &&
-                    (file.fileName.toString() == "$name.$AVPR" || file.fileName.toString() == "$name.$AVSC")
-            }.findFirst()
-            .getOrNull()
-            ?.toFile()
-    } ?: error("File $name not found!")
 
 fun String.toSubjectNameStrategy(): SubjectNameStrategy =
     when (SubjectNameStrategies.from(this)) {
         SubjectNameStrategies.TopicNameStrategy -> TopicNameStrategy()
         SubjectNameStrategies.RecordNameStrategy -> RecordNameStrategy()
         SubjectNameStrategies.TopicRecordNameStrategy -> TopicRecordNameStrategy()
-        null ->
-            error(
-                "Unsupported subject name strategy. Allowed: ${SubjectNameStrategies.values().joinToString()}",
-            )
+        null -> error("Unsupported subject name strategy. Allowed: ${SubjectNameStrategies.values().joinToString()}")
     }
 
 fun logStart(logger: Logger) {
@@ -100,7 +73,6 @@ fun logStart(logger: Logger) {
           /_\__ ___ _ ___  \ \    / (_)_____ _ _ _ __| |
          / _ \ V / '_/ _ \  \ \/\/ /| |_ / _` | '_/ _` |
         /_/ \_\_/|_| \___/   \_/\_/ |_/__\__,_|_| \__,_|
-
         """.trimIndent(),
     )
 }

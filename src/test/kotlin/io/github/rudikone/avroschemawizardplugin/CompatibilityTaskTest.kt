@@ -6,17 +6,16 @@ import io.github.rudikone.avroschemawizardplugin.testutils.ProjectDirGenerator.a
 import io.github.rudikone.avroschemawizardplugin.testutils.SimpleProject
 import io.github.rudikone.avroschemawizardplugin.testutils.avroSchemaWizard
 import io.github.rudikone.avroschemawizardplugin.testutils.buildProject
+import io.github.rudikone.avroschemawizardplugin.testutils.buildProjectAndFail
 import io.github.rudikone.avroschemawizardplugin.testutils.exampleProtocol
 import io.github.rudikone.avroschemawizardplugin.testutils.exampleSchema
 import io.github.rudikone.avroschemawizardplugin.testutils.kotlinJvm
 import io.github.rudikone.avroschemawizardplugin.testutils.randomString
 import org.gradle.testkit.runner.TaskOutcome.SUCCESS
-import org.gradle.testkit.runner.UnexpectedBuildFailure
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.io.TempDir
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
@@ -32,13 +31,12 @@ class CompatibilityTaskTest : BaseTaskTest() {
         "8.12, 1.8.0",
         "9.0.0, 2.2.0",
     )
-    fun `schema from avsc by is compatible with the latest schema under subject`(
+    fun `schema from avsc is compatible with the latest schema under subject`(
         gradleVersion: String,
         kotlinVersion: String,
         @TempDir tmp: File,
     ) {
         val topic = randomString()
-
         val schemaFileBeforeChanges =
             Avro(
                 name = "Example.avsc",
@@ -54,8 +52,6 @@ class CompatibilityTaskTest : BaseTaskTest() {
                     }
                     """.trimIndent(),
             )
-
-        // Adding a new optional field with a default value
         val schemaFileAfterChanges =
             Avro(
                 name = "Example.avsc",
@@ -94,27 +90,25 @@ class CompatibilityTaskTest : BaseTaskTest() {
         val testProjectDir = ProjectDirGenerator.generate(project = testProject, projectDir = tmp)
         testProjectDir.addOrReplaceAvroFiles(schemaFileBeforeChanges)
 
-        // Register schema before changes
         val registerTaskResult =
             buildProject(gradleVersion = gradleVersion, projectDir = testProjectDir, arguments = arrayOf(REGISTER_TASK_NAME))
         assertEquals(SUCCESS, registerTaskResult.task(":$REGISTER_TASK_NAME")?.outcome)
 
-        // Making changes to schema
         testProjectDir.addOrReplaceAvroFiles(schemaFileAfterChanges)
 
-        // Check compatibility
-        val checkCompatibilityTaskResult =
+        val output =
             buildProject(
                 gradleVersion = gradleVersion,
                 projectDir = testProjectDir,
                 arguments = arrayOf(COMPATIBILITY_CHECK_TASK_NAME),
             ).output
 
-        assertTrue {
-            checkCompatibilityTaskResult.contains(
+        assertTrue(
+            output.contains(
                 "Schema ru.rudikov.example.Example is compatible with subject $topic-value. Compatibility: BACKWARD",
-            )
-        }
+            ),
+            "Expected compatible result.\nOutput:\n$output",
+        )
     }
 
     @Test
@@ -122,7 +116,6 @@ class CompatibilityTaskTest : BaseTaskTest() {
         @TempDir tmp: File,
     ) {
         val topic = randomString()
-
         val schemaFileBeforeChanges =
             Avro(
                 name = "Example.avsc",
@@ -138,8 +131,6 @@ class CompatibilityTaskTest : BaseTaskTest() {
                     }
                     """.trimIndent(),
             )
-
-        // Changing the "Age" field type
         val schemaFileAfterChanges =
             Avro(
                 name = "Example.avsc",
@@ -173,30 +164,26 @@ class CompatibilityTaskTest : BaseTaskTest() {
         val testProjectDir = ProjectDirGenerator.generate(project = testProject, projectDir = tmp)
         testProjectDir.addOrReplaceAvroFiles(schemaFileBeforeChanges)
 
-        // Register schema before changes
         val registerTaskResult = buildProject(projectDir = testProjectDir, arguments = arrayOf(REGISTER_TASK_NAME))
         assertEquals(SUCCESS, registerTaskResult.task(":$REGISTER_TASK_NAME")?.outcome)
 
-        // Making changes to schema
         testProjectDir.addOrReplaceAvroFiles(schemaFileAfterChanges)
 
-        // Check compatibility
-        val checkCompatibilityTaskResult =
-            buildProject(projectDir = testProjectDir, arguments = arrayOf(COMPATIBILITY_CHECK_TASK_NAME)).output
+        val output = buildProject(projectDir = testProjectDir, arguments = arrayOf(COMPATIBILITY_CHECK_TASK_NAME)).output
 
-        assertTrue {
-            checkCompatibilityTaskResult.contains(
+        assertTrue(
+            output.contains(
                 "Schema ru.rudikov.example.Example is not compatible with subject $topic-value. Compatibility: BACKWARD",
-            )
-        }
+            ),
+            "Expected incompatible result.\nOutput:\n$output",
+        )
     }
 
     @Test
-    fun `schema from avpr by is compatible with the latest schema under subject`(
+    fun `schema from avpr is compatible with the latest schema under subject`(
         @TempDir tmp: File,
     ) {
         val topic = randomString()
-
         val protocolFileBeforeChanges =
             Avro(
                 name = "ExampleProtocol.avpr",
@@ -217,8 +204,6 @@ class CompatibilityTaskTest : BaseTaskTest() {
                     }
                     """.trimIndent(),
             )
-
-        // Adding a new optional field with a default value
         val protocolFileAfterChanges =
             Avro(
                 name = "ExampleProtocol.avpr",
@@ -262,22 +247,19 @@ class CompatibilityTaskTest : BaseTaskTest() {
         val testProjectDir = ProjectDirGenerator.generate(project = testProject, projectDir = tmp)
         testProjectDir.addOrReplaceAvroFiles(protocolFileBeforeChanges)
 
-        // Register schema before changes
         val registerTaskResult = buildProject(projectDir = testProjectDir, arguments = arrayOf(REGISTER_TASK_NAME))
         assertEquals(SUCCESS, registerTaskResult.task(":$REGISTER_TASK_NAME")?.outcome)
 
-        // Making changes to schema
         testProjectDir.addOrReplaceAvroFiles(protocolFileAfterChanges)
 
-        // Check compatibility
-        val checkCompatibilityTaskResult =
-            buildProject(projectDir = testProjectDir, arguments = arrayOf(COMPATIBILITY_CHECK_TASK_NAME)).output
+        val output = buildProject(projectDir = testProjectDir, arguments = arrayOf(COMPATIBILITY_CHECK_TASK_NAME)).output
 
-        assertTrue {
-            checkCompatibilityTaskResult.contains(
+        assertTrue(
+            output.contains(
                 "Schema ru.rudikov.example.Example is compatible with subject $topic-value. Compatibility: BACKWARD",
-            )
-        }
+            ),
+            "Expected compatible result.\nOutput:\n$output",
+        )
     }
 
     @Test
@@ -285,7 +267,6 @@ class CompatibilityTaskTest : BaseTaskTest() {
         @TempDir tmp: File,
     ) {
         val topic = randomString()
-
         val schemaFileBeforeChanges =
             Avro(
                 name = "ExampleProtocol.avpr",
@@ -306,8 +287,6 @@ class CompatibilityTaskTest : BaseTaskTest() {
                     }
                     """.trimIndent(),
             )
-
-        // Changing the "Age" field type
         val schemaFileAfterChanges =
             Avro(
                 name = "ExampleProtocol.avpr",
@@ -347,26 +326,23 @@ class CompatibilityTaskTest : BaseTaskTest() {
         val testProjectDir = ProjectDirGenerator.generate(project = testProject, projectDir = tmp)
         testProjectDir.addOrReplaceAvroFiles(schemaFileBeforeChanges)
 
-        // Register schema before changes
         val registerTaskResult = buildProject(projectDir = testProjectDir, arguments = arrayOf(REGISTER_TASK_NAME))
         assertEquals(SUCCESS, registerTaskResult.task(":$REGISTER_TASK_NAME")?.outcome)
 
-        // Making changes to schema
         testProjectDir.addOrReplaceAvroFiles(schemaFileAfterChanges)
 
-        // Check compatibility
-        val checkCompatibilityTaskResult =
-            buildProject(projectDir = testProjectDir, arguments = arrayOf(COMPATIBILITY_CHECK_TASK_NAME)).output
+        val output = buildProject(projectDir = testProjectDir, arguments = arrayOf(COMPATIBILITY_CHECK_TASK_NAME)).output
 
-        assertTrue {
-            checkCompatibilityTaskResult.contains(
+        assertTrue(
+            output.contains(
                 "Schema ru.rudikov.example.Example is not compatible with subject $topic-value. Compatibility: BACKWARD",
-            )
-        }
+            ),
+            "Expected incompatible result.\nOutput:\n$output",
+        )
     }
 
     @Test
-    fun `topic configs is empty exception thrown`(
+    fun `subject configs empty exception thrown`(
         @TempDir tmp: File,
     ) {
         val avroWizardConfig =
@@ -381,15 +357,13 @@ class CompatibilityTaskTest : BaseTaskTest() {
         val testProject = SimpleProject(avroWizardConfig = avroWizardConfig)
         val testProjectDir = ProjectDirGenerator.generate(project = testProject, projectDir = tmp)
 
-        val buildResult =
-            assertThrows<UnexpectedBuildFailure> {
-                buildProject(projectDir = testProjectDir, arguments = arrayOf(COMPATIBILITY_CHECK_TASK_NAME))
-            }
+        val output = buildProjectAndFail(projectDir = testProjectDir, arguments = arrayOf(COMPATIBILITY_CHECK_TASK_NAME)).output
 
-        assertTrue {
-            buildResult.message?.contains("Compatibility test failure!") == true
-            buildResult.message?.contains("Subject configs must not be empty") == true
-        }
+        assertTrue(
+            output.contains("Compatibility test failed") &&
+                output.contains("Subject configs must not be empty"),
+            "Expected empty subject configs failure.\nOutput:\n$output",
+        )
     }
 
     @Test
@@ -397,7 +371,6 @@ class CompatibilityTaskTest : BaseTaskTest() {
         @TempDir tmp: File,
     ) {
         val topic = randomString()
-
         val schemaFile =
             Avro(
                 name = "Example.avsc",
@@ -432,18 +405,15 @@ class CompatibilityTaskTest : BaseTaskTest() {
         val testProjectDir = ProjectDirGenerator.generate(project = testProject, projectDir = tmp)
         testProjectDir.addOrReplaceAvroFiles(schemaFile)
 
-        val buildResult =
-            assertThrows<UnexpectedBuildFailure> {
-                buildProject(projectDir = testProjectDir, arguments = arrayOf(COMPATIBILITY_CHECK_TASK_NAME))
-            }
+        val output = buildProjectAndFail(projectDir = testProjectDir, arguments = arrayOf(COMPATIBILITY_CHECK_TASK_NAME)).output
 
-        assertTrue {
-            buildResult.message?.contains("Compatibility test failed") == true
-            buildResult.message?.contains(
-                "Unsupported subject name strategy. Allowed: TopicNameStrategy, RecordNameStrategy, TopicRecordNameStrategy",
-            ) ==
-                true
-        }
+        assertTrue(
+            output.contains("Compatibility test failed") &&
+                output.contains(
+                    "Unsupported subject name strategy. Allowed: TopicNameStrategy, RecordNameStrategy, TopicRecordNameStrategy",
+                ),
+            "Expected unsupported-strategy failure.\nOutput:\n$output",
+        )
     }
 
     @Test
@@ -452,7 +422,6 @@ class CompatibilityTaskTest : BaseTaskTest() {
     ) {
         val topic = randomString()
         val randomSchema = "Random"
-
         val exampleSchemaFile = exampleSchema()
 
         val avroWizardConfig =
@@ -472,16 +441,14 @@ class CompatibilityTaskTest : BaseTaskTest() {
         val testProjectDir = ProjectDirGenerator.generate(project = testProject, projectDir = tmp)
         testProjectDir.addOrReplaceAvroFiles(exampleSchemaFile)
 
-        val buildResult =
-            assertThrows<UnexpectedBuildFailure> {
-                buildProject(projectDir = testProjectDir, arguments = arrayOf(COMPATIBILITY_CHECK_TASK_NAME))
-            }
+        val output = buildProjectAndFail(projectDir = testProjectDir, arguments = arrayOf(COMPATIBILITY_CHECK_TASK_NAME)).output
 
-        assertTrue {
-            buildResult.message?.contains("Compatibility test failure!") == true
-            buildResult.message?.contains("Failed check compatibility $randomSchema for $topic") == true
-            buildResult.message?.contains("File $randomSchema not found!") == true
-        }
+        assertTrue(
+            output.contains("Compatibility test failed") &&
+                output.contains("Failed check compatibility $randomSchema for $topic") &&
+                output.contains("File $randomSchema not found in configured search path(s)!"),
+            "Expected file-not-found failure.\nOutput:\n$output",
+        )
     }
 
     @Test
@@ -490,7 +457,6 @@ class CompatibilityTaskTest : BaseTaskTest() {
     ) {
         val topic = randomString()
         val schema = "FirstExampleRecordFromProtocol"
-
         val exampleProtocolFile = exampleProtocol()
 
         val avroWizardConfig =
@@ -510,16 +476,14 @@ class CompatibilityTaskTest : BaseTaskTest() {
         val testProjectDir = ProjectDirGenerator.generate(project = testProject, projectDir = tmp)
         testProjectDir.addOrReplaceAvroFiles(exampleProtocolFile)
 
-        val buildResult =
-            assertThrows<UnexpectedBuildFailure> {
-                buildProject(projectDir = testProjectDir, arguments = arrayOf(COMPATIBILITY_CHECK_TASK_NAME))
-            }
+        val output = buildProjectAndFail(projectDir = testProjectDir, arguments = arrayOf(COMPATIBILITY_CHECK_TASK_NAME)).output
 
-        assertTrue {
-            buildResult.message?.contains("Compatibility test failure!") == true
-            buildResult.message?.contains("Failed check compatibility $schema for $topic") == true
-            buildResult.message?.contains("File $schema not found!") == true
-        }
+        assertTrue(
+            output.contains("Compatibility test failed") &&
+                output.contains("Failed check compatibility $schema for $topic") &&
+                output.contains("File $schema not found in configured search path(s)!"),
+            "Expected file-not-found-in-protocol failure.\nOutput:\n$output",
+        )
     }
 
     @Test
@@ -528,8 +492,7 @@ class CompatibilityTaskTest : BaseTaskTest() {
     ) {
         val firstTopic = randomString()
         val secondTopic = randomString()
-
-        val protocolFileBeforeChanges =
+        val protocolFile =
             Avro(
                 name = "ExampleProtocol.avpr",
                 payLoad =
@@ -557,7 +520,6 @@ class CompatibilityTaskTest : BaseTaskTest() {
                     """.trimIndent(),
             )
 
-        // Config with correct schemaRegistryUrl
         val avroWizardConfigForRegisterSchemas =
             """
             avroWizardConfig {
@@ -580,14 +542,12 @@ class CompatibilityTaskTest : BaseTaskTest() {
         val testProjectForRegisterSchemas = SimpleProject(avroWizardConfig = avroWizardConfigForRegisterSchemas)
         val testProjectDirForRegisterSchemas =
             ProjectDirGenerator.generate(project = testProjectForRegisterSchemas, projectDir = tmp)
-        testProjectDirForRegisterSchemas.addOrReplaceAvroFiles(protocolFileBeforeChanges)
+        testProjectDirForRegisterSchemas.addOrReplaceAvroFiles(protocolFile)
 
-        // Register schema before changes
         val registerTaskResult =
             buildProject(projectDir = testProjectDirForRegisterSchemas, arguments = arrayOf(REGISTER_TASK_NAME))
         assertEquals(SUCCESS, registerTaskResult.task(":$REGISTER_TASK_NAME")?.outcome)
 
-        // Config with unknown schemaRegistryUrl
         val avroWizardConfigForCheckCompatibility =
             """
             avroWizardConfig {
@@ -610,24 +570,19 @@ class CompatibilityTaskTest : BaseTaskTest() {
         val testProjectForCheckCompatibility = SimpleProject(avroWizardConfig = avroWizardConfigForCheckCompatibility)
         val testProjectDirForCheckCompatibility =
             ProjectDirGenerator.generate(project = testProjectForCheckCompatibility, projectDir = tmp)
+        testProjectDirForCheckCompatibility.addOrReplaceAvroFiles(protocolFile)
 
-        // Check compatibility
-        val checkCompatibilityTaskResult =
-            assertThrows<UnexpectedBuildFailure> {
-                buildProject(
-                    projectDir = testProjectDirForCheckCompatibility,
-                    arguments = arrayOf(COMPATIBILITY_CHECK_TASK_NAME),
-                )
-            }
+        val output =
+            buildProjectAndFail(
+                projectDir = testProjectDirForCheckCompatibility,
+                arguments = arrayOf(COMPATIBILITY_CHECK_TASK_NAME),
+            ).output
 
-        assertTrue {
-            checkCompatibilityTaskResult.message?.contains("Compatibility test failure!") == true
-            checkCompatibilityTaskResult.message?.contains("Failed check compatibility FirstExampleRecordFromProtocol for $firstTopic") ==
-                true
-            checkCompatibilityTaskResult.message?.contains(
-                "Failed check compatibility SecondExampleRecordFromProtocol for $secondTopic!",
-            ) ==
-                true
-        }
+        assertTrue(
+            output.contains("Compatibility test failed") &&
+                output.contains("Failed check compatibility FirstExampleRecordFromProtocol for $firstTopic") &&
+                output.contains("Failed check compatibility SecondExampleRecordFromProtocol for $secondTopic"),
+            "Expected unknown-host failure for every config.\nOutput:\n$output",
+        )
     }
 }

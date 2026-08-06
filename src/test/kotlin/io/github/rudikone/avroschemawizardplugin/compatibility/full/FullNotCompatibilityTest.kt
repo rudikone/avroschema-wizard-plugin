@@ -334,18 +334,19 @@ class FullNotCompatibilityTest : BaseTaskTest() {
         testProjectDir.addOrReplaceAvroFiles(afterChanges)
 
         // Check compatibility
-        val checkCompatibilityTaskResult =
+        val output =
             buildProject(
                 projectDir = testProjectDir,
                 arguments = arrayOf(COMPATIBILITY_CHECK_TASK_NAME, "--compatibility=$COMPATIBILITY"),
             ).output
 
-        assertTrue {
-            checkCompatibilityTaskResult.contains(
+        assertTrue(
+            output.contains(
                 "Schema ru.rudikov.example.Example is not compatible with subject $topic-value. Compatibility: $COMPATIBILITY",
-            )
-            checkCompatibilityTaskResult.contains(message)
-        }
+            ) &&
+                output.contains(message),
+            "Expected incompatible result containing:\n$message\nOutput:\n$output",
+        )
     }
 
     companion object {

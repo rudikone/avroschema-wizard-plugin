@@ -11,11 +11,11 @@ fun randomString(): String {
     return (1..5).map { chars.random() }.joinToString("")
 }
 
-fun buildProject(
+private fun runner(
     projectDir: File,
-    gradleVersion: String = DEFAULT_GRADLE_VERSION,
-    vararg arguments: String,
-): BuildResult =
+    gradleVersion: String,
+    arguments: Array<out String>,
+): GradleRunner =
     GradleRunner
         .create()
         .withGradleVersion(gradleVersion)
@@ -24,4 +24,15 @@ fun buildProject(
         .withEnvironment(System.getenv())
         .withArguments(listOf("--build-cache", "-i", "-s", *arguments))
         .forwardOutput()
-        .build()
+
+fun buildProject(
+    projectDir: File,
+    gradleVersion: String = DEFAULT_GRADLE_VERSION,
+    vararg arguments: String,
+): BuildResult = runner(projectDir, gradleVersion, arguments).build()
+
+fun buildProjectAndFail(
+    projectDir: File,
+    gradleVersion: String = DEFAULT_GRADLE_VERSION,
+    vararg arguments: String,
+): BuildResult = runner(projectDir, gradleVersion, arguments).buildAndFail()
