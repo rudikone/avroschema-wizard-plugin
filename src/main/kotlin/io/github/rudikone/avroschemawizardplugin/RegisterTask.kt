@@ -2,52 +2,58 @@ package io.github.rudikone.avroschemawizardplugin
 
 import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient
 import org.gradle.api.DefaultTask
-import org.gradle.api.provider.MapProperty
+import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.TaskExecutionException
 import org.gradle.api.tasks.UntrackedTask
 
+private const val SR_CLIENT_CACHE_CAPACITY = 1
+
 @UntrackedTask(because = "Registers schemas in external Schema Registry")
 abstract class RegisterTask : DefaultTask() {
     init {
         description = "Register all schemas"
-        group = "other"
+        group = PLUGIN_TASK_GROUP
     }
 
     @get:Input
     @get:Optional
     abstract val schemaRegistryUrl: Property<String>
 
-    @get:Input
-    abstract val subjectConfigs: MapProperty<String, SubjectConfig>
+    // @Internal: таска @UntrackedTask, up-to-date отключён;
+    // spec-и семантически не являются кэшируемым входом.
+    @get:Internal
+    abstract val subjectSpecs: ListProperty<SubjectSpec>
 
     @TaskAction
     fun registerAllSchemas() {
         logStart(logger)
 
         runCatching {
-            if (subjectConfigs.orNull.isNullOrEmpty()) error("Topic configs is empty!")
+            val specs = subjectSpecs.get()
+            if (specs.isEmpty()) error("Topic configs is empty!")
 
-            val registryClient = CachedSchemaRegistryClient(schemaRegistryUrl.get(), 1)
+            val fileCache = buildFileCache(specs)
             var allSuccess = true
 
-            val fileCache = buildFileCache(subjectConfigs.get().values)
-
-            registryClient.use { client ->
-                subjectConfigs.get().forEach { (topic, config) ->
+            CachedSchemaRegistryClient(schemaRegistryUrl.get(), SR_CLIENT_CACHE_CAPACITY).use { client ->
+                specs.forEach { spec ->
                     var subject: String? = null
                     runCatching {
-                        val nameStrategy = config.subjectNameStrategy.get().toSubjectNameStrategy()
-                        val schema = generateSchema(config, fileCache)
-                        subject = nameStrategy.subjectName(topic, false, schema)
+                        val nameStrategy = spec.subjectNameStrategy.toSubjectNameStrategy()
+                        val schema = generateSchema(spec, fileCache)
+                        subject = nameStrategy.subjectName(spec.topic, false, schema)
                         client.register(subject, schema)
-                    }.onSuccess {
-                        logger.lifecycle("Registered ${config.schema.get()} with id: $it under subject $subject")
+                    }.onSuccess { id ->
+                        logger.lifecycle(
+                            "Registered ${spec.schema} with id: $id under subject $subject",
+                        )
                     }.onFailure {
-                        logger.warn("Failed register ${config.schema.get()} for $topic!", it)
+                        logger.warn("Failed register ${spec.schema} for ${spec.topic}!", it)
                         allSuccess = false
                     }
                 }

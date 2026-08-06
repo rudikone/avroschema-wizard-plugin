@@ -4,20 +4,23 @@ import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import org.gradle.api.DefaultTask
-import org.gradle.api.provider.MapProperty
+import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.TaskExecutionException
 import org.gradle.api.tasks.UntrackedTask
 import org.gradle.api.tasks.options.Option
 
+private const val SR_CLIENT_CACHE_CAPACITY = 1
+
 @UntrackedTask(because = "Checks schemas in external Schema Registry")
 abstract class CompatibilityCheckTask : DefaultTask() {
     init {
         description = "Test compatibility of a schema with the latest schema under subject"
-        group = "other"
+        group = PLUGIN_TASK_GROUP
     }
 
     @get:Input
@@ -39,22 +42,23 @@ abstract class CompatibilityCheckTask : DefaultTask() {
     @get:Optional
     abstract val schemaRegistryUrl: Property<String>
 
-    @get:Input
-    abstract val subjectConfigs: MapProperty<String, SubjectConfig>
+    @get:Internal
+    abstract val subjectSpecs: ListProperty<SubjectSpec>
 
     @TaskAction
     fun checkCompatibility() {
         logStart(logger)
 
         runCatching {
-            if (subjectConfigs.orNull.isNullOrEmpty()) error("Subject configs must not be empty")
+            val specs = subjectSpecs.get()
+            if (specs.isEmpty()) error("Subject configs must not be empty")
 
-            val client = CachedSchemaRegistryClient(schemaRegistryUrl.get(), 1)
-
-            if (subject.isPresent && schemaForCheck.isPresent) {
-                client.use { testForConcreteSchema(it) }
-            } else {
-                client.use { testForAllSchemas(it) }
+            CachedSchemaRegistryClient(schemaRegistryUrl.get(), SR_CLIENT_CACHE_CAPACITY).use { client ->
+                if (subject.isPresent && schemaForCheck.isPresent) {
+                    testForConcreteSchema(client, specs)
+                } else {
+                    testForAllSchemas(client, specs)
+                }
             }
         }.onFailure {
             logger.error("Compatibility test failed", it)
@@ -62,31 +66,36 @@ abstract class CompatibilityCheckTask : DefaultTask() {
         }
     }
 
-    private fun testForConcreteSchema(client: SchemaRegistryClient) {
+    private fun testForConcreteSchema(
+        client: SchemaRegistryClient,
+        specs: List<SubjectSpec>,
+    ) {
         val schemaName = schemaForCheck.get()
-        val config =
-            subjectConfigs
-                .get()
-                .values
-                .find { it.schema.get() == schemaName }
-                ?: error("No configuration found for schema $schemaName in avroWizardConfig")
-        val newSchema = generateSchema(config)
+        val spec =
+            specs.find { it.schema == schemaName }
+                ?: error("No configuration found for schema $schemaName in $EXTENSION_NAME")
+
+        val fileCache = buildFileCache(specs)
+        val newSchema = generateSchema(spec, fileCache)
         testCompatibility(client, newSchema, subject.get())
     }
 
-    private fun testForAllSchemas(client: SchemaRegistryClient) {
+    private fun testForAllSchemas(
+        client: SchemaRegistryClient,
+        specs: List<SubjectSpec>,
+    ) {
         var allSuccess = true
-        val fileCache = buildFileCache(subjectConfigs.get().values)
+        val fileCache = buildFileCache(specs)
 
-        subjectConfigs.get().forEach { (topic, config) ->
+        specs.forEach { spec ->
             runCatching {
-                val nameStrategy = config.subjectNameStrategy.get().toSubjectNameStrategy()
-                val newSchema = generateSchema(config, fileCache)
-                val subject = nameStrategy.subjectName(topic, false, newSchema)
-                testCompatibility(client, newSchema, subject)
+                val nameStrategy = spec.subjectNameStrategy.toSubjectNameStrategy()
+                val newSchema = generateSchema(spec, fileCache)
+                val computedSubject = nameStrategy.subjectName(spec.topic, false, newSchema)
+                testCompatibility(client, newSchema, computedSubject)
             }.onFailure {
                 allSuccess = false
-                logger.error("Failed check compatibility ${config.schema.get()} for $topic!", it)
+                logger.error("Failed check compatibility ${spec.schema} for ${spec.topic}!", it)
             }
         }
 
@@ -101,42 +110,41 @@ abstract class CompatibilityCheckTask : DefaultTask() {
         val schemaName = newSchema.rawSchema()?.fullName
 
         /*
-         * Catching 40408 error code when subject does not have subject-level compatibility configured and
-         * use subject-level compatibility.
-         * See https://docs.confluent.io/cloud/current/sr/sr-rest-apis.html#get-the-compatibility-level-on-a-subject
-         * */
+         * Catching 40408 error code when subject does not have subject-level compatibility configured
+         * and use global compatibility.
+         * https://docs.confluent.io/cloud/current/sr/sr-rest-apis.html#get-the-compatibility-level-on-a-subject
+         */
         val originalCompatibility =
-            runCatching {
-                client.getCompatibility(subject)
-            }.getOrElse {
-                client.getCompatibility(null)
-            }
+            runCatching { client.getCompatibility(subject) }
+                .getOrElse { client.getCompatibility(null) }
+
         val newCompatibility = compatibility.orNull?.takeIf { it.isNotBlank() }
         newCompatibility?.let { client.updateCompatibility(subject, it) }
 
-        val incompatibilities = client.testCompatibilityVerbose(subject, newSchema)
-
-        if (incompatibilities.isNotEmpty()) {
-            val message =
-                buildString {
-                    appendLine(
-                        "Schema $schemaName is not compatible with subject $subject. " +
-                            "Compatibility: ${newCompatibility ?: originalCompatibility}",
-                    )
-                    incompatibilities.forEach { inc ->
-                        append(" -> ")
-                        appendLine(inc)
+        try {
+            val incompatibilities = client.testCompatibilityVerbose(subject, newSchema)
+            if (incompatibilities.isNotEmpty()) {
+                val message =
+                    buildString {
+                        appendLine(
+                            "Schema $schemaName is not compatible with subject $subject. " +
+                                "Compatibility: ${newCompatibility ?: originalCompatibility}",
+                        )
+                        incompatibilities.forEach { inc ->
+                            append(" -> ")
+                            appendLine(inc)
+                        }
                     }
-                }
-
-            logger.lifecycle(message)
-        } else {
-            logger.lifecycle(
-                "Schema $schemaName is compatible with subject $subject. " +
-                    "Compatibility: ${newCompatibility ?: originalCompatibility}",
-            )
+                logger.lifecycle(message)
+            } else {
+                logger.lifecycle(
+                    "Schema $schemaName is compatible with subject $subject. " +
+                        "Compatibility: ${newCompatibility ?: originalCompatibility}",
+                )
+            }
+        } finally {
+            // Restore the original compatibility level even if the validation fails
+            newCompatibility?.let { client.updateCompatibility(subject, originalCompatibility) }
         }
-
-        newCompatibility?.let { client.updateCompatibility(subject, originalCompatibility) }
     }
 }

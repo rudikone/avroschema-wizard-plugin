@@ -4,60 +4,54 @@ import io.github.rudikone.avroschemawizardplugin.SubjectNameStrategies.TopicName
 import org.gradle.api.Action
 import org.gradle.api.Named
 import org.gradle.api.NamedDomainObjectContainer
-import org.gradle.api.Project
+import org.gradle.api.file.ProjectLayout
+import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
-import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.Optional
+import org.gradle.api.provider.Provider
 import javax.inject.Inject
 
 const val DEFAULT_SCHEMA_REGISTRY_URL = "http://localhost:10081"
 val DEFAULT_SUBJECT_NAME_STRATEGY = TopicNameStrategy.name
 
-abstract class AvroWizardExtension(
-    @Inject private val project: Project,
-) {
-    private val objects = project.objects
+abstract class AvroWizardExtension
+    @Inject
+    constructor(
+        objects: ObjectFactory,
+        layout: ProjectLayout,
+    ) {
+        val schemaRegistryUrl: Property<String> =
+            objects.property(String::class.java).convention(DEFAULT_SCHEMA_REGISTRY_URL)
 
-    val schemaRegistryUrl: Property<String> =
-        objects.property(String::class.java).convention(DEFAULT_SCHEMA_REGISTRY_URL)
+        val defaultSearchPath: Provider<String> =
+            layout.buildDirectory.map { it.asFile.absolutePath }
 
-    val subjectConfigs: NamedDomainObjectContainer<SubjectConfig> =
-        objects.domainObjectContainer(SubjectConfig::class.java)
+        val subjectConfigs: NamedDomainObjectContainer<SubjectConfig> =
+            objects.domainObjectContainer(SubjectConfig::class.java)
 
-    fun configs(action: Action<NamedDomainObjectContainer<SubjectConfig>>) {
-        action.execute(subjectConfigs)
+        fun configs(action: Action<NamedDomainObjectContainer<SubjectConfig>>) {
+            action.execute(subjectConfigs)
+        }
     }
-}
 
-abstract class SubjectConfig(
-    @Inject private val project: Project,
-    private val name: String,
-) : Named {
-    private val objects = project.objects
+abstract class SubjectConfig
+    @Inject
+    constructor(
+        private val name: String,
+    ) : Named {
+        abstract val searchAvroFilePath: Property<String>
 
-    @get:Input
-    @get:Optional
-    val searchAvroFilePath: Property<String> =
-        objects.property(String::class.java).convention(
-            project.layout.buildDirectory
-                .get()
-                .asFile.absolutePath,
-        )
+        abstract val protocol: Property<String>
 
-    @get:Input
-    @get:Optional
-    val protocol: Property<String> = objects.property(String::class.java)
+        abstract val schema: Property<String>
 
-    @get:Input
-    val schema: Property<String> = objects.property(String::class.java)
+        abstract val subjectNameStrategy: Property<String>
 
-    @get:Input
-    @get:Optional
-    val subjectNameStrategy: Property<String> =
-        objects.property(String::class.java).convention(DEFAULT_SUBJECT_NAME_STRATEGY)
+        init {
+            subjectNameStrategy.convention(DEFAULT_SUBJECT_NAME_STRATEGY)
+        }
 
-    override fun getName(): String = name
-}
+        override fun getName(): String = name
+    }
 
 fun NamedDomainObjectContainer<SubjectConfig>.topic(
     name: String,
