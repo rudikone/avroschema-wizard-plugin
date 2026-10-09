@@ -38,6 +38,7 @@ group = property("GROUP").toString()
 version = property("VERSION").toString()
 
 ktlint {
+    version.set("1.8.0")
     debug.set(false)
     verbose.set(true)
     android.set(false)

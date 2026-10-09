@@ -56,12 +56,16 @@ avroWizardConfig {
 
 ## Version Matrix
 
-| Component                              | Version |
-|----------------------------------------|---------|
-| Gradle (min)                           | 8.4     |
-| Java (min)                             | 17      |
-| confluent:kafka-schema-registry-client | 8.1.1   |
-| confluent:kafka-schema-serializer      | 8.1.1   |
+The plugin is built for Java 17 bytecode and is verified against the following toolchain versions:
+
+| Component                              | Version              |
+|----------------------------------------|----------------------|
+| Gradle (min)                           | 8.4                  |
+| Gradle (tested up to)                  | 9.8.1                |
+| Java (min)                             | 17                   |
+| Kotlin Gradle plugin (tested)          | 1.8.0, 1.9.20, 2.2.0 |
+| confluent:kafka-schema-registry-client | 8.3.2                |
+| confluent:kafka-schema-serializer      | 8.3.2                |
 
 **Configuration Cache Support:** since version 3.3.0
 

@@ -27,7 +27,7 @@ class RegisterTaskTest : BaseTaskTest() {
     @CsvSource(
         "8.4, 1.8.0",
         "8.12, 1.8.0",
-        "9.0.0, 2.2.0",
+        "9.8.1, 2.2.0",
     )
     fun `schema is registered from avsc and avpr`(
         gradleVersion: String,
