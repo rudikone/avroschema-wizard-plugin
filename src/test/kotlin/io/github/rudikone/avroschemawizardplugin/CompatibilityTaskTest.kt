@@ -29,7 +29,7 @@ class CompatibilityTaskTest : BaseTaskTest() {
     @CsvSource(
         "8.4, 1.8.0",
         "8.12, 1.8.0",
-        "9.0.0, 2.2.0",
+        "9.8.1, 2.2.0",
     )
     fun `schema from avsc is compatible with the latest schema under subject`(
         gradleVersion: String,
