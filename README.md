@@ -19,8 +19,6 @@
 
 Gradle plugin for registering Avro schemas to Schema Registry and checking their compatibility.
 
----
-
 ## ⚡ Quick Start
 
 ```kotlin
