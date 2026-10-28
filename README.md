@@ -15,14 +15,9 @@
   <a href="https://plugins.gradle.org/plugin/io.github.rudikone.avroschema-wizard-plugin">
     <img src="https://img.shields.io/gradle-plugin-portal/v/io.github.rudikone.avroschema-wizard-plugin" alt="Download">
   </a>
-  <a href="https://deepwiki.com/rudikone/avroschema-wizard-plugin">
-    <img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki">
-  </a>
 </p>
 
 Gradle plugin for registering Avro schemas to Schema Registry and checking their compatibility.
-
-**Full documentation:** [DeepWiki](https://deepwiki.com/rudikone/avroschema-wizard-plugin/)
 
 ---
 
