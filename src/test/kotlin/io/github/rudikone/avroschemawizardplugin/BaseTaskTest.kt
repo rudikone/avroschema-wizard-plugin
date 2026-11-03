@@ -19,7 +19,7 @@ abstract class BaseTaskTest {
                 .withListener("kafka:19092")
 
         private val schemaRegistryContainer =
-            GenericContainer(DockerImageName.parse("confluentinc/cp-schema-registry:8.1.0"))
+            GenericContainer(DockerImageName.parse("confluentinc/cp-schema-registry:8.4.0"))
                 .dependsOn(kafkaContainer)
                 .withExposedPorts(8085)
                 .withNetworkAliases("schemaregistry")

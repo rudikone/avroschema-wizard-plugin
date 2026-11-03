@@ -2,28 +2,17 @@
 
 package io.github.rudikone.avroschemawizardplugin.compatibility.forward
 
-import io.github.rudikone.avroschemawizardplugin.BaseTaskTest
-import io.github.rudikone.avroschemawizardplugin.COMPATIBILITY_CHECK_TASK_NAME
-import io.github.rudikone.avroschemawizardplugin.REGISTER_TASK_NAME
+import io.github.rudikone.avroschemawizardplugin.compatibility.BaseCompatibilityTest
 import io.github.rudikone.avroschemawizardplugin.testutils.Avro
-import io.github.rudikone.avroschemawizardplugin.testutils.ProjectDirGenerator
-import io.github.rudikone.avroschemawizardplugin.testutils.ProjectDirGenerator.addOrReplaceAvroFiles
-import io.github.rudikone.avroschemawizardplugin.testutils.SimpleProject
-import io.github.rudikone.avroschemawizardplugin.testutils.buildProject
-import io.github.rudikone.avroschemawizardplugin.testutils.randomString
-import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
-import org.junit.jupiter.api.io.TempDir
-import java.io.File
 
 private const val COMPATIBILITY = "FORWARD"
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @DisplayName("Incompatible Avro schema changes are correctly rejected under FORWARD compatibility. Upgrade first: Producer")
-class ForwardNotCompatibilityTest : BaseTaskTest() {
+class ForwardNotCompatibilityTest : BaseCompatibilityTest() {
     private val beforeChanges =
         Avro(
             name = "Example.avsc",
@@ -72,9 +61,11 @@ class ForwardNotCompatibilityTest : BaseTaskTest() {
                     """.trimIndent(),
             )
 
-        test(
-            afterChanges = afterChanges,
-            message = "description:'The type (path '/fields/0/type') of a field in the old schema does not match with the new schema', additionalInfo:'reader type: INT not compatible with writer type: LONG'",
+        checkNotCompatible(
+            before = beforeChanges,
+            after = afterChanges,
+            message = "reader type: INT not compatible with writer type: LONG",
+            compatibility = COMPATIBILITY,
         )
     }
 
@@ -102,9 +93,11 @@ class ForwardNotCompatibilityTest : BaseTaskTest() {
                     """.trimIndent(),
             )
 
-        test(
-            afterChanges = afterChanges,
-            message = "description:'The field 'Name' at path '/fields/1' in the old schema has no default value and is missing in the new schema', additionalInfo:'Name'",
+        checkNotCompatible(
+            before = beforeChanges,
+            after = afterChanges,
+            message = "The field 'Name' at path '/fields/1' in the old schema has no default value and is missing in the new schema",
+            compatibility = COMPATIBILITY,
         )
     }
 
@@ -133,9 +126,11 @@ class ForwardNotCompatibilityTest : BaseTaskTest() {
                     """.trimIndent(),
             )
 
-        test(
-            afterChanges = afterChanges,
-            message = "description:'The old schema is missing enum symbols '[OTHER]' at path '/fields/2/type/symbols' in the new schema', additionalInfo:'[OTHER]'",
+        checkNotCompatible(
+            before = beforeChanges,
+            after = afterChanges,
+            message = "The old schema is missing enum symbols '[OTHER]' at path '/fields/2/type/symbols' in the new schema",
+            compatibility = COMPATIBILITY,
         )
     }
 
@@ -164,9 +159,11 @@ class ForwardNotCompatibilityTest : BaseTaskTest() {
                     """.trimIndent(),
             )
 
-        test(
-            afterChanges = afterChanges,
-            message = "description:'The old schema is missing a type inside a union field at path '/fields/1/type/2' in the new schema', additionalInfo:'reader union lacking writer type: INT'",
+        checkNotCompatible(
+            before = beforeChanges,
+            after = afterChanges,
+            message = "reader union lacking writer type: INT",
+            compatibility = COMPATIBILITY,
         )
     }
 
@@ -195,63 +192,61 @@ class ForwardNotCompatibilityTest : BaseTaskTest() {
                     """.trimIndent(),
             )
 
-        test(
-            afterChanges = afterChanges,
-            message = "description:'The type (path '/') of a field in the old schema does not match with the new schema', additionalInfo:'reader type: INT not compatible with writer type: NULL'",
+        checkNotCompatible(
+            before = beforeChanges,
+            after = afterChanges,
+            message = "reader type: INT not compatible with writer type: NULL",
+            compatibility = COMPATIBILITY,
         )
     }
 
-    @BeforeAll
-    fun setupProject() {
-        topic = randomString()
-        val avroWizardConfig =
-            """
-            avroWizardConfig {
-                schemaRegistryUrl.set("$schemaRegistryUrl")
-                configs {
-                    topic("$topic") {
-                        searchAvroFilePath.set("${'$'}projectDir/src/resources")
-                        schema.set("Example")
-                    }
-                }
-            }
-            """.trimIndent()
+    @Test
+    fun `array field item type int extended to long`() {
+        val before =
+            record(
+                """{ "name": "Age", "type": "int", "default": 0 }""",
+                """{ "name": "Name", "type": ["null", "string"] }""",
+                """{ "name": "Tags", "type": { "type": "array", "items": "int" }, "default": [] }""",
+                """{ "name": "Gender", "type": { "type": "enum", "name": "Gender", "symbols": ["MALE", "FEMALE"] } }""",
+            )
+        val after =
+            record(
+                """{ "name": "Age", "type": "int", "default": 0 }""",
+                """{ "name": "Name", "type": ["null", "string"] }""",
+                """{ "name": "Tags", "type": { "type": "array", "items": "long" }, "default": [] }""",
+                """{ "name": "Gender", "type": { "type": "enum", "name": "Gender", "symbols": ["MALE", "FEMALE"] } }""",
+            )
 
-        val testProject = SimpleProject(avroWizardConfig = avroWizardConfig)
-        testProjectDir = ProjectDirGenerator.generate(project = testProject, projectDir = tmp)
-        testProjectDir.addOrReplaceAvroFiles(beforeChanges)
-        buildProject(projectDir = testProjectDir, arguments = arrayOf(REGISTER_TASK_NAME))
-    }
-
-    private fun test(
-        afterChanges: Avro,
-        message: String,
-    ) {
-        // Making changes to schema
-        testProjectDir.addOrReplaceAvroFiles(afterChanges)
-
-        // Check compatibility
-        val output =
-            buildProject(
-                projectDir = testProjectDir,
-                arguments = arrayOf(COMPATIBILITY_CHECK_TASK_NAME, "--compatibility=$COMPATIBILITY"),
-            ).output
-
-        assertTrue(
-            output.contains(
-                "Schema ru.rudikov.example.Example is not compatible with subject $topic-value. Compatibility: $COMPATIBILITY",
-            ) &&
-                output.contains(message),
-            "Expected incompatible result containing:\n$message\nOutput:\n$output",
+        checkNotCompatible(
+            before = before,
+            after = after,
+            message = "reader type: INT not compatible with writer type: LONG",
+            compatibility = COMPATIBILITY,
         )
     }
 
-    companion object {
-        @TempDir
-        @JvmStatic
-        private lateinit var tmp: File
+    @Test
+    fun `map field value type int extended to long`() {
+        val before =
+            record(
+                """{ "name": "Age", "type": "int", "default": 0 }""",
+                """{ "name": "Name", "type": ["null", "string"] }""",
+                """{ "name": "Labels", "type": { "type": "map", "values": "int" }, "default": {} }""",
+                """{ "name": "Gender", "type": { "type": "enum", "name": "Gender", "symbols": ["MALE", "FEMALE"] } }""",
+            )
+        val after =
+            record(
+                """{ "name": "Age", "type": "int", "default": 0 }""",
+                """{ "name": "Name", "type": ["null", "string"] }""",
+                """{ "name": "Labels", "type": { "type": "map", "values": "long" }, "default": {} }""",
+                """{ "name": "Gender", "type": { "type": "enum", "name": "Gender", "symbols": ["MALE", "FEMALE"] } }""",
+            )
 
-        private lateinit var topic: String
-        private lateinit var testProjectDir: File
+        checkNotCompatible(
+            before = before,
+            after = after,
+            message = "reader type: INT not compatible with writer type: LONG",
+            compatibility = COMPATIBILITY,
+        )
     }
 }

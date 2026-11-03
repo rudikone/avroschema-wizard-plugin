@@ -57,8 +57,8 @@ The plugin is built for Java 17 bytecode and is verified against the following t
 | Gradle (tested up to)                  | 9.8.1                |
 | Java (min)                             | 17                   |
 | Kotlin Gradle plugin (tested)          | 1.8.0, 1.9.20, 2.2.0 |
-| confluent:kafka-schema-registry-client | 8.3.2                |
-| confluent:kafka-schema-serializer      | 8.3.2                |
+| confluent:kafka-schema-registry-client | 8.4.0                |
+| confluent:kafka-schema-serializer      | 8.4.0                |
 
 **Configuration Cache Support:** since version 3.3.0
 
@@ -254,6 +254,8 @@ Detailed schema evolution and compatibility check examples:
 - [BACKWARD](src/test/kotlin/io/github/rudikone/avroschemawizardplugin/compatibility/backward/)
 - [FORWARD](src/test/kotlin/io/github/rudikone/avroschemawizardplugin/compatibility/forward/)
 - [FULL](src/test/kotlin/io/github/rudikone/avroschemawizardplugin/compatibility/full/)
+
+All compatible/incompatible change types are tested against **Confluent Schema Registry 8.4.0** (`confluentinc/cp-schema-registry:8.4.0`, see [`BaseTaskTest`](src/test/kotlin/io/github/rudikone/avroschemawizardplugin/BaseTaskTest.kt)).
 
 📖 [Confluent Docs: Schema Evolution](https://docs.confluent.io/platform/current/schema-registry/fundamentals/schema-evolution.html)
 

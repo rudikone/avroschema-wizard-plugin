@@ -2,28 +2,17 @@
 
 package io.github.rudikone.avroschemawizardplugin.compatibility.backward
 
-import io.github.rudikone.avroschemawizardplugin.BaseTaskTest
-import io.github.rudikone.avroschemawizardplugin.COMPATIBILITY_CHECK_TASK_NAME
-import io.github.rudikone.avroschemawizardplugin.REGISTER_TASK_NAME
+import io.github.rudikone.avroschemawizardplugin.compatibility.BaseCompatibilityTest
 import io.github.rudikone.avroschemawizardplugin.testutils.Avro
-import io.github.rudikone.avroschemawizardplugin.testutils.ProjectDirGenerator
-import io.github.rudikone.avroschemawizardplugin.testutils.ProjectDirGenerator.addOrReplaceAvroFiles
-import io.github.rudikone.avroschemawizardplugin.testutils.SimpleProject
-import io.github.rudikone.avroschemawizardplugin.testutils.buildProject
-import io.github.rudikone.avroschemawizardplugin.testutils.randomString
-import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
-import org.junit.jupiter.api.io.TempDir
-import java.io.File
 
 private const val COMPATIBILITY = "BACKWARD"
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @DisplayName("All allowed Avro schema evolutions are compatible under BACKWARD compatibility. Upgrade first: Consumer")
-class BackwardCompatibilityTest : BaseTaskTest() {
+class BackwardCompatibilityTest : BaseCompatibilityTest() {
     private val beforeChanges =
         Avro(
             name = "Example.avsc",
@@ -74,7 +63,7 @@ class BackwardCompatibilityTest : BaseTaskTest() {
                     """.trimIndent(),
             )
 
-        test(afterChanges)
+        checkCompatible(beforeChanges, afterChanges, COMPATIBILITY)
     }
 
     @Test
@@ -114,7 +103,7 @@ class BackwardCompatibilityTest : BaseTaskTest() {
                     """.trimIndent(),
             )
 
-        test(afterChanges)
+        checkCompatible(beforeChanges, afterChanges, COMPATIBILITY)
     }
 
     @Test
@@ -152,7 +141,7 @@ class BackwardCompatibilityTest : BaseTaskTest() {
                     """.trimIndent(),
             )
 
-        test(afterChanges)
+        checkCompatible(beforeChanges, afterChanges, COMPATIBILITY)
     }
 
     @Test
@@ -181,7 +170,7 @@ class BackwardCompatibilityTest : BaseTaskTest() {
                     """.trimIndent(),
             )
 
-        test(afterChanges)
+        checkCompatible(beforeChanges, afterChanges, COMPATIBILITY)
     }
 
     @Test
@@ -218,7 +207,7 @@ class BackwardCompatibilityTest : BaseTaskTest() {
                     """.trimIndent(),
             )
 
-        test(afterChanges)
+        checkCompatible(beforeChanges, afterChanges, COMPATIBILITY)
     }
 
     @Test
@@ -248,7 +237,7 @@ class BackwardCompatibilityTest : BaseTaskTest() {
                     """.trimIndent(),
             )
 
-        test(afterChanges)
+        checkCompatible(beforeChanges, afterChanges, COMPATIBILITY)
     }
 
     @Test
@@ -278,7 +267,7 @@ class BackwardCompatibilityTest : BaseTaskTest() {
                     """.trimIndent(),
             )
 
-        test(afterChanges)
+        checkCompatible(beforeChanges, afterChanges, COMPATIBILITY)
     }
 
     @Test
@@ -306,7 +295,7 @@ class BackwardCompatibilityTest : BaseTaskTest() {
                     """.trimIndent(),
             )
 
-        test(afterChanges)
+        checkCompatible(beforeChanges, afterChanges, COMPATIBILITY)
     }
 
     @Test
@@ -334,7 +323,7 @@ class BackwardCompatibilityTest : BaseTaskTest() {
                     """.trimIndent(),
             )
 
-        test(afterChanges)
+        checkCompatible(beforeChanges, afterChanges, COMPATIBILITY)
     }
 
     @Test
@@ -363,7 +352,7 @@ class BackwardCompatibilityTest : BaseTaskTest() {
                     """.trimIndent(),
             )
 
-        test(afterChanges)
+        checkCompatible(beforeChanges, afterChanges, COMPATIBILITY)
     }
 
     @Test
@@ -392,56 +381,59 @@ class BackwardCompatibilityTest : BaseTaskTest() {
                     """.trimIndent(),
             )
 
-        test(afterChanges)
+        checkCompatible(beforeChanges, afterChanges, COMPATIBILITY)
     }
 
-    @BeforeAll
-    fun setupProject() {
-        topic = randomString()
-        val avroWizardConfig =
-            """
-            avroWizardConfig {
-                schemaRegistryUrl.set("$schemaRegistryUrl")
-                configs {
-                    topic("$topic") {
-                        searchAvroFilePath.set("${'$'}projectDir/src/resources")
-                        schema.set("Example")
-                    }
-                }
-            }
-            """.trimIndent()
+    @Test
+    fun `array field item type int extended to long`() {
+        val before =
+            record(
+                """{ "name": "Age", "type": "int", "default": 0 }""",
+                """{ "name": "Name", "type": ["null", "string"] }""",
+                """{ "name": "Tags", "type": { "type": "array", "items": "int" }, "default": [] }""",
+                """{ "name": "Gender", "type": { "type": "enum", "name": "Gender", "symbols": ["MALE", "FEMALE"] } }""",
+            )
+        val after =
+            record(
+                """{ "name": "Age", "type": "int", "default": 0 }""",
+                """{ "name": "Name", "type": ["null", "string"] }""",
+                """{ "name": "Tags", "type": { "type": "array", "items": "long" }, "default": [] }""",
+                """{ "name": "Gender", "type": { "type": "enum", "name": "Gender", "symbols": ["MALE", "FEMALE"] } }""",
+            )
 
-        val testProject = SimpleProject(avroWizardConfig = avroWizardConfig)
-        testProjectDir = ProjectDirGenerator.generate(project = testProject, projectDir = tmp)
-        testProjectDir.addOrReplaceAvroFiles(beforeChanges)
-        buildProject(projectDir = testProjectDir, arguments = arrayOf(REGISTER_TASK_NAME))
+        checkCompatible(before, after, COMPATIBILITY)
     }
 
-    private fun test(afterChanges: Avro) {
-        // Making changes to schema
-        testProjectDir.addOrReplaceAvroFiles(afterChanges)
+    @Test
+    fun `map field value type int extended to long`() {
+        val before =
+            record(
+                """{ "name": "Age", "type": "int", "default": 0 }""",
+                """{ "name": "Name", "type": ["null", "string"] }""",
+                """{ "name": "Labels", "type": { "type": "map", "values": "int" }, "default": {} }""",
+                """{ "name": "Gender", "type": { "type": "enum", "name": "Gender", "symbols": ["MALE", "FEMALE"] } }""",
+            )
+        val after =
+            record(
+                """{ "name": "Age", "type": "int", "default": 0 }""",
+                """{ "name": "Name", "type": ["null", "string"] }""",
+                """{ "name": "Labels", "type": { "type": "map", "values": "long" }, "default": {} }""",
+                """{ "name": "Gender", "type": { "type": "enum", "name": "Gender", "symbols": ["MALE", "FEMALE"] } }""",
+            )
 
-        // Check compatibility
-        val output =
-            buildProject(
-                projectDir = testProjectDir,
-                arguments = arrayOf(COMPATIBILITY_CHECK_TASK_NAME, "--compatibility=$COMPATIBILITY"),
-            ).output
-
-        assertTrue(
-            output.contains(
-                "Schema ru.rudikov.example.Example is compatible with subject $topic-value. Compatibility: $COMPATIBILITY",
-            ),
-            "Expected compatible result.\nOutput:\n$output",
-        )
+        checkCompatible(before, after, COMPATIBILITY)
     }
 
-    companion object {
-        @TempDir
-        @JvmStatic
-        private lateinit var tmp: File
+    @Test
+    fun `field default value is changed`() {
+        val after =
+            record(
+                """{ "name": "Age", "type": "int", "default": 1 }""",
+                """{ "name": "Name", "type": "string" }""",
+                """{ "name": "LastName", "type": ["null", "string"] }""",
+                """{ "name": "Gender", "type": { "type": "enum", "name": "Gender", "symbols": ["MALE", "FEMALE"] } }""",
+            )
 
-        private lateinit var topic: String
-        private lateinit var testProjectDir: File
+        checkCompatible(beforeChanges, after, COMPATIBILITY)
     }
 }

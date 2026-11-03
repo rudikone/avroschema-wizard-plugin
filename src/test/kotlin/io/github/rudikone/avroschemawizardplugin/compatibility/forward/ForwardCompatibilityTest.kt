@@ -2,28 +2,17 @@
 
 package io.github.rudikone.avroschemawizardplugin.compatibility.forward
 
-import io.github.rudikone.avroschemawizardplugin.BaseTaskTest
-import io.github.rudikone.avroschemawizardplugin.COMPATIBILITY_CHECK_TASK_NAME
-import io.github.rudikone.avroschemawizardplugin.REGISTER_TASK_NAME
+import io.github.rudikone.avroschemawizardplugin.compatibility.BaseCompatibilityTest
 import io.github.rudikone.avroschemawizardplugin.testutils.Avro
-import io.github.rudikone.avroschemawizardplugin.testutils.ProjectDirGenerator
-import io.github.rudikone.avroschemawizardplugin.testutils.ProjectDirGenerator.addOrReplaceAvroFiles
-import io.github.rudikone.avroschemawizardplugin.testutils.SimpleProject
-import io.github.rudikone.avroschemawizardplugin.testutils.buildProject
-import io.github.rudikone.avroschemawizardplugin.testutils.randomString
-import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
-import org.junit.jupiter.api.io.TempDir
-import java.io.File
 
 private const val COMPATIBILITY = "FORWARD"
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @DisplayName("All allowed Avro schema evolutions are compatible under FORWARD compatibility. Upgrade first: Producer")
-class ForwardCompatibilityTest : BaseTaskTest() {
+class ForwardCompatibilityTest : BaseCompatibilityTest() {
     private val beforeChanges =
         Avro(
             name = "Example.avsc",
@@ -73,7 +62,36 @@ class ForwardCompatibilityTest : BaseTaskTest() {
                     """.trimIndent(),
             )
 
-        test(afterChanges)
+        checkCompatible(beforeChanges, afterChanges, COMPATIBILITY)
+    }
+
+    @Test
+    fun `field without default value is added`() {
+        val afterChanges =
+            Avro(
+                name = "Example.avsc",
+                payLoad =
+                    """
+                     {
+                        "type": "record",
+                        "namespace": "ru.rudikov.example",
+                        "name": "Example",
+                        "fields": [
+                            { "name": "Age", "type": "int", "default": 0 },
+                            { "name": "Name", "type": ["null", "string"] },
+                            {
+                                "name": "Gender",
+                                "type": {
+                                    "type": "enum", "name": "Gender", "symbols": ["MALE", "FEMALE"]
+                                 }
+                            },
+                            { "name": "LastName", "type": "string" }
+                        ]
+                    }
+                    """.trimIndent(),
+            )
+
+        checkCompatible(beforeChanges, afterChanges, COMPATIBILITY)
     }
 
     @Test
@@ -112,7 +130,7 @@ class ForwardCompatibilityTest : BaseTaskTest() {
                     """.trimIndent(),
             )
 
-        test(afterChanges)
+        checkCompatible(beforeChanges, afterChanges, COMPATIBILITY)
     }
 
     @Test
@@ -140,7 +158,7 @@ class ForwardCompatibilityTest : BaseTaskTest() {
                     """.trimIndent(),
             )
 
-        test(afterChanges)
+        checkCompatible(beforeChanges, afterChanges, COMPATIBILITY)
     }
 
     @Test
@@ -176,7 +194,7 @@ class ForwardCompatibilityTest : BaseTaskTest() {
                     """.trimIndent(),
             )
 
-        test(afterChanges)
+        checkCompatible(beforeChanges, afterChanges, COMPATIBILITY)
     }
 
     @Test
@@ -205,7 +223,7 @@ class ForwardCompatibilityTest : BaseTaskTest() {
                     """.trimIndent(),
             )
 
-        test(afterChanges)
+        checkCompatible(beforeChanges, afterChanges, COMPATIBILITY)
     }
 
     @Test
@@ -232,7 +250,7 @@ class ForwardCompatibilityTest : BaseTaskTest() {
                     """.trimIndent(),
             )
 
-        test(afterChanges)
+        checkCompatible(beforeChanges, afterChanges, COMPATIBILITY)
     }
 
     @Test
@@ -260,56 +278,42 @@ class ForwardCompatibilityTest : BaseTaskTest() {
                     """.trimIndent(),
             )
 
-        test(afterChanges)
+        checkCompatible(beforeChanges, afterChanges, COMPATIBILITY)
     }
 
-    @BeforeAll
-    fun setupProject() {
-        topic = randomString()
-        val avroWizardConfig =
-            """
-            avroWizardConfig {
-                schemaRegistryUrl.set("$schemaRegistryUrl")
-                configs {
-                    topic("$topic") {
-                        searchAvroFilePath.set("${'$'}projectDir/src/resources")
-                        schema.set("Example")
-                    }
-                }
-            }
-            """.trimIndent()
+    @Test
+    fun `field type long is narrowed to int`() {
+        val before =
+            record(
+                """{ "name": "Age", "type": "long", "default": 0 }""",
+                """{ "name": "Name", "type": ["null", "string", "int"] }""",
+                """{ "name": "Gender", "type": { "type": "enum", "name": "Gender", "symbols": ["MALE", "FEMALE"] } }""",
+            )
+        val after =
+            record(
+                """{ "name": "Age", "type": "int", "default": 0 }""",
+                """{ "name": "Name", "type": ["null", "string", "int"] }""",
+                """{ "name": "Gender", "type": { "type": "enum", "name": "Gender", "symbols": ["MALE", "FEMALE"] } }""",
+            )
 
-        val testProject = SimpleProject(avroWizardConfig = avroWizardConfig)
-        testProjectDir = ProjectDirGenerator.generate(project = testProject, projectDir = tmp)
-        testProjectDir.addOrReplaceAvroFiles(beforeChanges)
-        buildProject(projectDir = testProjectDir, arguments = arrayOf(REGISTER_TASK_NAME))
+        checkCompatible(before, after, COMPATIBILITY)
     }
 
-    private fun test(afterChanges: Avro) {
-        // Making changes to schema
-        testProjectDir.addOrReplaceAvroFiles(afterChanges)
+    @Test
+    fun `union branch is removed`() {
+        val before =
+            record(
+                """{ "name": "Age", "type": "long", "default": 0 }""",
+                """{ "name": "Name", "type": ["null", "string", "int"] }""",
+                """{ "name": "Gender", "type": { "type": "enum", "name": "Gender", "symbols": ["MALE", "FEMALE"] } }""",
+            )
+        val after =
+            record(
+                """{ "name": "Age", "type": "long", "default": 0 }""",
+                """{ "name": "Name", "type": ["null", "string"] }""",
+                """{ "name": "Gender", "type": { "type": "enum", "name": "Gender", "symbols": ["MALE", "FEMALE"] } }""",
+            )
 
-        // Check compatibility
-        val output =
-            buildProject(
-                projectDir = testProjectDir,
-                arguments = arrayOf(COMPATIBILITY_CHECK_TASK_NAME, "--compatibility=$COMPATIBILITY"),
-            ).output
-
-        assertTrue(
-            output.contains(
-                "Schema ru.rudikov.example.Example is compatible with subject $topic-value. Compatibility: $COMPATIBILITY",
-            ),
-            "Expected compatible result.\nOutput:\n$output",
-        )
-    }
-
-    companion object {
-        @TempDir
-        @JvmStatic
-        private lateinit var tmp: File
-
-        private lateinit var topic: String
-        private lateinit var testProjectDir: File
+        checkCompatible(before, after, COMPATIBILITY)
     }
 }
