@@ -2,28 +2,17 @@
 
 package io.github.rudikone.avroschemawizardplugin.compatibility.backward
 
-import io.github.rudikone.avroschemawizardplugin.BaseTaskTest
-import io.github.rudikone.avroschemawizardplugin.COMPATIBILITY_CHECK_TASK_NAME
-import io.github.rudikone.avroschemawizardplugin.REGISTER_TASK_NAME
+import io.github.rudikone.avroschemawizardplugin.compatibility.BaseCompatibilityTest
 import io.github.rudikone.avroschemawizardplugin.testutils.Avro
-import io.github.rudikone.avroschemawizardplugin.testutils.ProjectDirGenerator
-import io.github.rudikone.avroschemawizardplugin.testutils.ProjectDirGenerator.addOrReplaceAvroFiles
-import io.github.rudikone.avroschemawizardplugin.testutils.SimpleProject
-import io.github.rudikone.avroschemawizardplugin.testutils.buildProject
-import io.github.rudikone.avroschemawizardplugin.testutils.randomString
-import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
-import org.junit.jupiter.api.io.TempDir
-import java.io.File
 
 private const val COMPATIBILITY = "BACKWARD"
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @DisplayName("Incompatible Avro schema changes are correctly rejected under BACKWARD compatibility. Upgrade first: Consumer")
-class BackwardNotCompatibilityTest : BaseTaskTest() {
+class BackwardNotCompatibilityTest : BaseCompatibilityTest() {
     private val beforeChanges =
         Avro(
             name = "Example.avsc",
@@ -72,9 +61,11 @@ class BackwardNotCompatibilityTest : BaseTaskTest() {
                     """.trimIndent(),
             )
 
-        test(
-            afterChanges = afterChanges,
+        checkNotCompatible(
+            before = beforeChanges,
+            after = afterChanges,
             message = "reader type: STRING not compatible with writer type: INT",
+            compatibility = COMPATIBILITY,
         )
     }
 
@@ -103,9 +94,11 @@ class BackwardNotCompatibilityTest : BaseTaskTest() {
                     """.trimIndent(),
             )
 
-        test(
-            afterChanges = afterChanges,
-            message = "The new schema is missing enum symbols '[FEMALE]' at path '/fields/2/type/symbols' in the old schema', additionalInfo:'[FEMALE]",
+        checkNotCompatible(
+            before = beforeChanges,
+            after = afterChanges,
+            message = "The new schema is missing enum symbols '[FEMALE]' at path '/fields/2/type/symbols' in the old schema",
+            compatibility = COMPATIBILITY,
         )
     }
 
@@ -134,9 +127,11 @@ class BackwardNotCompatibilityTest : BaseTaskTest() {
                     """.trimIndent(),
             )
 
-        test(
-            afterChanges = afterChanges,
-            message = "The type (path '/') of a field in the new schema does not match with the old schema', additionalInfo:'reader type: STRING not compatible with writer type: NULL",
+        checkNotCompatible(
+            before = beforeChanges,
+            after = afterChanges,
+            message = "reader type: STRING not compatible with writer type: NULL",
+            compatibility = COMPATIBILITY,
         )
     }
 
@@ -166,63 +161,111 @@ class BackwardNotCompatibilityTest : BaseTaskTest() {
                     """.trimIndent(),
             )
 
-        test(
-            afterChanges = afterChanges,
-            message = "The field 'LastName' at path '/fields/3' in the new schema has no default value and is missing in the old schema', additionalInfo:'LastName'",
+        checkNotCompatible(
+            before = beforeChanges,
+            after = afterChanges,
+            message = "The field 'LastName' at path '/fields/3' in the new schema has no default value and is missing in the old schema",
+            compatibility = COMPATIBILITY,
         )
     }
 
-    @BeforeAll
-    fun setupProject() {
-        topic = randomString()
-        val avroWizardConfig =
-            """
-            avroWizardConfig {
-                schemaRegistryUrl.set("$schemaRegistryUrl")
-                configs {
-                    topic("$topic") {
-                        searchAvroFilePath.set("${'$'}projectDir/src/resources")
-                        schema.set("Example")
+    @Test
+    fun `field type long is narrowed to int`() {
+        val before =
+            record(
+                """{ "name": "Age", "type": "long", "default": 0 }""",
+                """{ "name": "Name", "type": ["null", "string", "int"] }""",
+                """{ "name": "Gender", "type": { "type": "enum", "name": "Gender", "symbols": ["MALE", "FEMALE"] } }""",
+            )
+        val after =
+            record(
+                """{ "name": "Age", "type": "int", "default": 0 }""",
+                """{ "name": "Name", "type": ["null", "string", "int"] }""",
+                """{ "name": "Gender", "type": { "type": "enum", "name": "Gender", "symbols": ["MALE", "FEMALE"] } }""",
+            )
+
+        checkNotCompatible(
+            before = before,
+            after = after,
+            message = "reader type: INT not compatible with writer type: LONG",
+            compatibility = COMPATIBILITY,
+        )
+    }
+
+    @Test
+    fun `union branch is removed`() {
+        val before =
+            record(
+                """{ "name": "Age", "type": "long", "default": 0 }""",
+                """{ "name": "Name", "type": ["null", "string", "int"] }""",
+                """{ "name": "Gender", "type": { "type": "enum", "name": "Gender", "symbols": ["MALE", "FEMALE"] } }""",
+            )
+        val after =
+            record(
+                """{ "name": "Age", "type": "long", "default": 0 }""",
+                """{ "name": "Name", "type": ["null", "string"] }""",
+                """{ "name": "Gender", "type": { "type": "enum", "name": "Gender", "symbols": ["MALE", "FEMALE"] } }""",
+            )
+
+        checkNotCompatible(
+            before = before,
+            after = after,
+            message = "reader union lacking writer type: INT",
+            compatibility = COMPATIBILITY,
+        )
+    }
+
+    @Test
+    fun `field is renamed`() {
+        val afterChanges =
+            Avro(
+                name = "Example.avsc",
+                payLoad =
+                    """
+                    {
+                        "type": "record",
+                        "namespace": "ru.rudikov.example",
+                        "name": "Example",
+                        "fields": [
+                            { "name": "Age", "type": "int", "default": 0 },
+                            { "name": "FullName", "type": ["null", "string"] },
+                            {
+                                "name": "Gender",
+                                "type": {
+                                    "type": "enum", "name": "Gender", "symbols": ["MALE", "FEMALE"]
+                                 }
+                            }
+                        ]
                     }
-                }
-            }
-            """.trimIndent()
+                    """.trimIndent(),
+            )
 
-        val testProject = SimpleProject(avroWizardConfig = avroWizardConfig)
-        testProjectDir = ProjectDirGenerator.generate(project = testProject, projectDir = tmp)
-        testProjectDir.addOrReplaceAvroFiles(beforeChanges)
-        buildProject(projectDir = testProjectDir, arguments = arrayOf(REGISTER_TASK_NAME))
-    }
-
-    private fun test(
-        afterChanges: Avro,
-        message: String,
-    ) {
-        // Making changes to schema
-        testProjectDir.addOrReplaceAvroFiles(afterChanges)
-
-        // Check compatibility
-        val output =
-            buildProject(
-                projectDir = testProjectDir,
-                arguments = arrayOf(COMPATIBILITY_CHECK_TASK_NAME, "--compatibility=$COMPATIBILITY"),
-            ).output
-
-        assertTrue(
-            output.contains(
-                "Schema ru.rudikov.example.Example is not compatible with subject $topic-value. Compatibility: $COMPATIBILITY",
-            ) &&
-                output.contains(message),
-            "Expected incompatible result containing:\n$message\nOutput:\n$output",
+        checkNotCompatible(
+            before = beforeChanges,
+            after = afterChanges,
+            message = "has no default value and is missing in the old schema",
+            compatibility = COMPATIBILITY,
         )
     }
 
-    companion object {
-        @TempDir
-        @JvmStatic
-        private lateinit var tmp: File
+    @Test
+    fun `fixed field size is changed`() {
+        val before =
+            record(
+                """{ "name": "Age", "type": "int", "default": 0 }""",
+                """{ "name": "Uuid", "type": { "type": "fixed", "name": "Uuid", "size": 16 } }""",
+            )
+        val after =
+            record(
+                """{ "name": "Age", "type": "int", "default": 0 }""",
+                """{ "name": "Uuid", "type": { "type": "fixed", "name": "Uuid", "size": 32 } }""",
+            )
 
-        private lateinit var topic: String
-        private lateinit var testProjectDir: File
+        checkNotCompatible(
+            before = before,
+            after = after,
+            message = "expected: 16, found: 32",
+            compatibility = COMPATIBILITY,
+        )
     }
 }

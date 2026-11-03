@@ -366,60 +366,6 @@ class RegisterTaskTest : BaseTaskTest() {
         )
     }
 
-    @Test
-    @DisplayName("Default value must match the first type in a union in Avro schema")
-    @Disabled(
-        """
-        Disabled after migration to 8.1.1 version for
-        io.confluent:kafka-schema-registry-client and io.confluent:kafka-schema-serializer.
-        See https://github.com/confluentinc/schema-registry/issues/4112
-    """,
-    )
-    fun `invalid default exception thrown`() {
-        val topic = randomString()
-        val schema = "Example"
-        val exampleSchemaFile =
-            Avro(
-                name = "$schema.avsc",
-                payLoad =
-                    """
-                    {
-                        "type": "record",
-                        "namespace": "ru.rudikov.example",
-                        "name": "$schema",
-                        "fields": [
-                            { "name": "Age", "type": [ "int", "null"], "default": null }
-                        ]
-                    }
-                    """.trimIndent(),
-            )
-
-        val avroWizardConfig =
-            """
-            avroWizardConfig {
-                schemaRegistryUrl.set("$schemaRegistryUrl")
-                configs {
-                    topic("$topic") {
-                        searchAvroFilePath.set("${'$'}projectDir/src/resources")
-                        schema.set("$schema")
-                    }
-                }
-            }
-            """.trimIndent()
-
-        val testProject = SimpleProject(avroWizardConfig = avroWizardConfig)
-        val testProjectDir = ProjectDirGenerator.generate(project = testProject, projectDir = tmp)
-        testProjectDir.addOrReplaceAvroFiles(exampleSchemaFile)
-
-        val output = buildProjectAndFail(projectDir = testProjectDir, arguments = arrayOf(REGISTER_TASK_NAME)).output
-
-        assertTrue(
-            output.contains("Failed registerAllSchemas task!") &&
-                output.contains("Failed register $schema for $topic"),
-            "Expected invalid-default failure.\nOutput:\n$output",
-        )
-    }
-
     companion object {
         @TempDir
         @JvmStatic
