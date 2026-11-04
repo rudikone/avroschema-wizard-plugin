@@ -216,9 +216,14 @@ The plugin reads the referenced schema from Schema Registry (via `subject` + `ve
 it together with the parent schema, so the parent schema is registered as valid. Referenced schemas
 are **not** registered automatically — they must already exist.
 
+References also work for types defined in `.avpr` protocols. Use `protocol` + `schema` as usual
+and declare the referenced, already-registered types in `references`. If a protocol type references
+another type defined in the **same** protocol, register that type separately and declare it as a
+reference too.
+
 **Notes:**
 
-- References only apply to `.avsc` schemas (not `.avpr` protocols)
+- References apply to both `.avsc` schemas and `.avpr` protocol types
 - If a reference points to a non-existent `subject` or `version`, the task fails with a clear
   error naming the reference
 

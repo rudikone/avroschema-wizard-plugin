@@ -77,17 +77,12 @@ abstract class RegisterTask : DefaultTask() {
     ): AvroSchema {
         if (spec.references.isEmpty()) return generateSchema(spec, fileCache)
 
-        require(spec.protocol == null) {
-            "Schema references are only supported for .avsc schemas, but '${spec.schema}' " +
-                "is a protocol (.avpr). Remove the references block or use an .avsc schema."
-        }
-
         // A referencing schema cannot be parsed standalone (the referenced named type is
         // not defined in the file), so build the AvroSchema from the raw string with the
         // resolved references attached; the Confluent constructor parses the referenced
         // schemas first, then the parent schema.
         val references = spec.references.map { SchemaReference(it.name, it.subject, it.version) }
         val resolvedReferences = SchemaReferenceResolver(client).resolveReferences(references)
-        return AvroSchema(readSchemaString(spec, fileCache), references, resolvedReferences, null)
+        return AvroSchema(resolveSchemaString(spec, fileCache), references, resolvedReferences, null)
     }
 }

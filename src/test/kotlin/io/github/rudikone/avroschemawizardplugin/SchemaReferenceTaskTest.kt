@@ -7,6 +7,7 @@ import io.github.rudikone.avroschemawizardplugin.testutils.buildProject
 import io.github.rudikone.avroschemawizardplugin.testutils.buildProjectAndFail
 import io.github.rudikone.avroschemawizardplugin.testutils.mainRecordSchema
 import io.github.rudikone.avroschemawizardplugin.testutils.randomString
+import io.github.rudikone.avroschemawizardplugin.testutils.referencingProtocol
 import io.github.rudikone.avroschemawizardplugin.testutils.sharedRecordSchema
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -90,6 +91,67 @@ class SchemaReferenceTaskTest : BaseTaskTest() {
     }
 
     @Test
+    fun `protocol type is registered with a reference to an already registered schema`() {
+        val sharedTopic = randomString()
+        val mainTopic = randomString()
+
+        // Pre-register the referenced schema in a separate build (avoids the test
+        // Schema Registry visibility race when a subject is registered and read in one run).
+        val sharedConfig =
+            """
+            avroWizardConfig {
+                schemaRegistryUrl.set("$schemaRegistryUrl")
+                configs {
+                    topic("$sharedTopic") {
+                        searchAvroFilePath.set("${'$'}projectDir/src/resources")
+                        schema.set("SharedRecord")
+                    }
+                }
+            }
+            """.trimIndent()
+        val sharedProject = SimpleProject(avroWizardConfig = sharedConfig)
+        val sharedProjectDir = ProjectDirGenerator.generate(project = sharedProject, projectDir = File(tmp, "shared"))
+        sharedProjectDir.addOrReplaceAvroFiles(sharedRecordSchema())
+        buildProject(projectDir = sharedProjectDir, arguments = arrayOf(REGISTER_TASK_NAME))
+
+        val mainConfig =
+            """
+            avroWizardConfig {
+                schemaRegistryUrl.set("$schemaRegistryUrl")
+                configs {
+                    topic("$mainTopic") {
+                        searchAvroFilePath.set("${'$'}projectDir/src/resources")
+                        protocol.set("ReferencingProtocol")
+                        schema.set("MainRecordFromProtocol")
+                        references {
+                            reference {
+                                name.set("$sharedRecordFullName")
+                                subject.set("$sharedTopic-value")
+                                version.set(1)
+                            }
+                        }
+                    }
+                }
+            }
+            """.trimIndent()
+        val mainProject = SimpleProject(avroWizardConfig = mainConfig)
+        val mainProjectDir = ProjectDirGenerator.generate(project = mainProject, projectDir = File(tmp, "main"))
+        mainProjectDir.addOrReplaceAvroFiles(referencingProtocol())
+
+        val output =
+            buildProject(
+                projectDir = mainProjectDir,
+                arguments = arrayOf(REGISTER_TASK_NAME),
+            ).output
+        assertTrue(
+            output.contains(
+                Regex("Registered MainRecordFromProtocol with id: \\d+ under subject $mainTopic-value"),
+            ),
+            "Expected registration of the protocol type with references.\nOutput:\n$output",
+        )
+    }
+
+    @Test
     fun `build fails when reference subject does not exist`() {
         val mainTopic = randomString()
         val missingSubject = randomString()
@@ -117,6 +179,50 @@ class SchemaReferenceTaskTest : BaseTaskTest() {
         val testProject = SimpleProject(avroWizardConfig = avroWizardConfig)
         val testProjectDir = ProjectDirGenerator.generate(project = testProject, projectDir = tmp)
         testProjectDir.addOrReplaceAvroFiles(mainRecordSchema())
+
+        val output =
+            buildProjectAndFail(
+                projectDir = testProjectDir,
+                arguments = arrayOf(REGISTER_TASK_NAME),
+            ).output
+
+        assertTrue(
+            output.contains(
+                "Cannot resolve reference '$sharedRecordFullName' for subject '$missingSubject-value' version 1",
+            ),
+            "Expected a clear unresolvable-reference error.\nOutput:\n$output",
+        )
+    }
+
+    @Test
+    fun `build fails when reference subject does not exist for protocol type`() {
+        val mainTopic = randomString()
+        val missingSubject = randomString()
+
+        val avroWizardConfig =
+            """
+            avroWizardConfig {
+                schemaRegistryUrl.set("$schemaRegistryUrl")
+                configs {
+                    topic("$mainTopic") {
+                        searchAvroFilePath.set("${'$'}projectDir/src/resources")
+                        protocol.set("ReferencingProtocol")
+                        schema.set("MainRecordFromProtocol")
+                        references {
+                            reference {
+                                name.set("$sharedRecordFullName")
+                                subject.set("$missingSubject-value")
+                                version.set(1)
+                            }
+                        }
+                    }
+                }
+            }
+            """.trimIndent()
+
+        val testProject = SimpleProject(avroWizardConfig = avroWizardConfig)
+        val testProjectDir = ProjectDirGenerator.generate(project = testProject, projectDir = tmp)
+        testProjectDir.addOrReplaceAvroFiles(referencingProtocol())
 
         val output =
             buildProjectAndFail(
