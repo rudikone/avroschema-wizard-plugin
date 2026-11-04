@@ -69,6 +69,7 @@ The plugin is built for Java 17 bytecode and is verified against the following t
 - Register Avro schemas to Schema Registry
 - Schema compatibility checking (BACKWARD, FORWARD, FULL)
 - Support for .avsc files and .avpr protocols
+- Schema references between already-registered schemas (`references { reference { ... } }`)
 - Three subject naming strategies: TopicNameStrategy, RecordNameStrategy, TopicRecordNameStrategy
 - Configuration Cache compatible
 - Local testing and CI/CD integration
@@ -144,6 +145,7 @@ avroWizardConfig {
 | `protocol`            | Name of .avpr file (without extension)                                         | —                       | ❌¹       |
 | `schema`              | Schema name (.avsc) or record from protocol                                    | —                       | ✅        |
 | `subjectNameStrategy` | Strategy: `TopicNameStrategy`, `RecordNameStrategy`, `TopicRecordNameStrategy` | `TopicNameStrategy`     | ❌        |
+| `references`          | List of references to already-registered schemas (see below)                    | `[]`                    | ❌        |
 
 ¹ — `protocol` and `schema` (without protocol) are interchangeable: specify either protocol+schema, or just schema.
 
@@ -179,6 +181,48 @@ Registered FirstExampleRecordFromProtocol with id: 123 under subject my-topic-va
 - When registering the same schema under different subjects, ID is assigned once
 
 📖 [Test Examples](src/test/kotlin/io/github/rudikone/avroschemawizardplugin/RegisterTaskTest.kt)
+
+#### Schemas with references
+
+If a schema references another Avro type (an external named type), it can only be registered when
+the referenced schema is already present in Schema Registry. Declare each reference by its
+`name` (the fully-qualified type name as used in the parent schema), `subject` and `version`
+of the already-registered referenced schema:
+
+```kotlin
+avroWizardConfig {
+    schemaRegistryUrl.set("http://localhost:8081")
+    configs {
+        topic("shared-topic") {
+            searchAvroFilePath.set("$projectDir/src/main/resources/avro")
+            schema.set("SharedRecord")
+        }
+        topic("main-topic") {
+            searchAvroFilePath.set("$projectDir/src/main/resources/avro")
+            schema.set("MainRecord")
+            references {
+                reference {
+                    name.set("ru.rudikov.reference.SharedRecord")
+                    subject.set("shared-topic-value")
+                    version.set(1)
+                }
+            }
+        }
+    }
+}
+```
+
+The plugin reads the referenced schema from Schema Registry (via `subject` + `version`) and passes
+it together with the parent schema, so the parent schema is registered as valid. Referenced schemas
+are **not** registered automatically — they must already exist.
+
+**Notes:**
+
+- References only apply to `.avsc` schemas (not `.avpr` protocols)
+- If a reference points to a non-existent `subject` or `version`, the task fails with a clear
+  error naming the reference
+
+📖 [Test Examples](src/test/kotlin/io/github/rudikone/avroschemawizardplugin/SchemaReferenceTaskTest.kt)
 
 ---
 

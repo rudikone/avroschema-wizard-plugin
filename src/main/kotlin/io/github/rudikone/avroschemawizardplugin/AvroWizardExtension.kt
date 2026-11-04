@@ -6,6 +6,7 @@ import org.gradle.api.Named
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.file.ProjectLayout
 import org.gradle.api.model.ObjectFactory
+import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import javax.inject.Inject
@@ -33,10 +34,19 @@ abstract class AvroWizardExtension
         }
     }
 
+abstract class SchemaReferenceConfig {
+    abstract val name: Property<String>
+
+    abstract val subject: Property<String>
+
+    abstract val version: Property<Int>
+}
+
 abstract class SubjectConfig
     @Inject
     constructor(
         private val name: String,
+        private val objects: ObjectFactory,
     ) : Named {
         abstract val searchAvroFilePath: Property<String>
 
@@ -46,8 +56,18 @@ abstract class SubjectConfig
 
         abstract val subjectNameStrategy: Property<String>
 
+        abstract val references: ListProperty<SchemaReferenceConfig>
+
         init {
             subjectNameStrategy.convention(DEFAULT_SUBJECT_NAME_STRATEGY)
+        }
+
+        fun references(action: Action<ListProperty<SchemaReferenceConfig>>) {
+            action.execute(references)
+        }
+
+        fun ListProperty<SchemaReferenceConfig>.reference(config: SchemaReferenceConfig.() -> Unit) {
+            add(objects.newInstance(SchemaReferenceConfig::class.java).apply(config))
         }
 
         override fun getName(): String = name
@@ -67,6 +87,6 @@ enum class SubjectNameStrategies {
     ;
 
     companion object {
-        fun from(name: String) = values().find { it.name == name }
+        fun from(name: String) = entries.find { it.name == name }
     }
 }

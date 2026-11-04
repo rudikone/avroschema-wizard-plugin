@@ -43,12 +43,7 @@ fun generateSchema(
     spec: SubjectSpec,
     fileCache: Map<String, File>,
 ): AvroSchema {
-    val fileName = spec.protocol ?: spec.schema
-    val avroFile =
-        fileCache["$fileName.$AVPR"]
-            ?: fileCache["$fileName.$AVSC"]
-            ?: error("File $fileName not found in configured search path(s)!")
-
+    val avroFile = findAvroFile(spec, fileCache)
     return avroFile.inputStream().use { fis ->
         if (avroFile.extension == AVSC) {
             AvroSchema(Schema.Parser().parse(fis))
@@ -56,6 +51,21 @@ fun generateSchema(
             AvroSchema(Protocol.parse(fis).getType(spec.schema))
         }
     }
+}
+
+fun readSchemaString(
+    spec: SubjectSpec,
+    fileCache: Map<String, File>,
+): String = findAvroFile(spec, fileCache).readText()
+
+private fun findAvroFile(
+    spec: SubjectSpec,
+    fileCache: Map<String, File>,
+): File {
+    val fileName = spec.protocol ?: spec.schema
+    return fileCache["$fileName.$AVPR"]
+        ?: fileCache["$fileName.$AVSC"]
+        ?: error("File $fileName not found in configured search path(s)!")
 }
 
 fun String.toSubjectNameStrategy(): SubjectNameStrategy =
