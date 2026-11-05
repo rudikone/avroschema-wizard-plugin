@@ -60,3 +60,55 @@ fun exampleSchema() =
             }
             """.trimIndent(),
     )
+
+fun sharedRecordSchema() =
+    Avro(
+        name = "SharedRecord.avsc",
+        payLoad =
+            """
+            {
+                "type": "record",
+                "namespace": "ru.rudikov.reference",
+                "name": "SharedRecord",
+                "fields": [
+                    { "name": "id", "type": "int" }
+                ]
+            }
+            """.trimIndent(),
+    )
+
+fun mainRecordSchema() =
+    Avro(
+        name = "MainRecord.avsc",
+        payLoad =
+            """
+            {
+                "type": "record",
+                "namespace": "ru.rudikov.reference",
+                "name": "MainRecord",
+                "fields": [
+                    { "name": "shared", "type": "ru.rudikov.reference.SharedRecord" }
+                ]
+            }
+            """.trimIndent(),
+    )
+
+fun referencingProtocol() =
+    Avro(
+        name = "ReferencingProtocol.avpr",
+        payLoad =
+            """
+            {
+                "protocol": "ReferencingProtocol",
+                "namespace": "ru.rudikov.reference",
+                "types": [ {
+                    "type": "record",
+                    "name": "MainRecordFromProtocol",
+                    "fields": [
+                        { "name": "shared", "type": "ru.rudikov.reference.SharedRecord" }
+                    ]
+                } ],
+                "messages": { }
+            }
+            """.trimIndent(),
+    )

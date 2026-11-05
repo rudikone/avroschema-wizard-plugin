@@ -1,6 +1,9 @@
 package io.github.rudikone.avroschemawizardplugin
 
+import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient
+import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
+import io.confluent.kafka.schemaregistry.client.rest.entities.SchemaReference
 import org.gradle.api.DefaultTask
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
@@ -10,6 +13,7 @@ import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.TaskExecutionException
 import org.gradle.api.tasks.UntrackedTask
+import java.io.File
 
 private const val SR_CLIENT_CACHE_CAPACITY = 1
 
@@ -45,7 +49,7 @@ abstract class RegisterTask : DefaultTask() {
                     var subject: String? = null
                     runCatching {
                         val nameStrategy = spec.subjectNameStrategy.toSubjectNameStrategy()
-                        val schema = generateSchema(spec, fileCache)
+                        val schema = buildSchema(client, spec, fileCache)
                         subject = nameStrategy.subjectName(spec.topic, false, schema)
                         client.register(subject, schema)
                     }.onSuccess { id ->
@@ -64,5 +68,21 @@ abstract class RegisterTask : DefaultTask() {
             logger.error("Failed $REGISTER_TASK_NAME task!", it)
             throw TaskExecutionException(this, it)
         }
+    }
+
+    private fun buildSchema(
+        client: SchemaRegistryClient,
+        spec: SubjectSpec,
+        fileCache: Map<String, File>,
+    ): AvroSchema {
+        if (spec.references.isEmpty()) return generateSchema(spec, fileCache)
+
+        // A referencing schema cannot be parsed standalone (the referenced named type is
+        // not defined in the file), so build the AvroSchema from the raw string with the
+        // resolved references attached; the Confluent constructor parses the referenced
+        // schemas first, then the parent schema.
+        val references = spec.references.map { SchemaReference(it.name, it.subject, it.version) }
+        val resolvedReferences = SchemaReferenceResolver(client).resolveReferences(references)
+        return AvroSchema(resolveSchemaString(spec, fileCache), references, resolvedReferences, null)
     }
 }

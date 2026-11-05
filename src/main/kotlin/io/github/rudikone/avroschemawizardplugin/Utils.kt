@@ -1,5 +1,7 @@
 package io.github.rudikone.avroschemawizardplugin
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.node.ObjectNode
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import io.confluent.kafka.serializers.subject.RecordNameStrategy
 import io.confluent.kafka.serializers.subject.TopicNameStrategy
@@ -43,12 +45,7 @@ fun generateSchema(
     spec: SubjectSpec,
     fileCache: Map<String, File>,
 ): AvroSchema {
-    val fileName = spec.protocol ?: spec.schema
-    val avroFile =
-        fileCache["$fileName.$AVPR"]
-            ?: fileCache["$fileName.$AVSC"]
-            ?: error("File $fileName not found in configured search path(s)!")
-
+    val avroFile = findAvroFile(spec, fileCache)
     return avroFile.inputStream().use { fis ->
         if (avroFile.extension == AVSC) {
             AvroSchema(Schema.Parser().parse(fis))
@@ -56,6 +53,31 @@ fun generateSchema(
             AvroSchema(Protocol.parse(fis).getType(spec.schema))
         }
     }
+}
+
+fun resolveSchemaString(
+    spec: SubjectSpec,
+    fileCache: Map<String, File>,
+): String {
+    val avroFile = findAvroFile(spec, fileCache)
+    return if (avroFile.extension == AVSC) {
+        avroFile.readText()
+    } else {
+        val protocol =
+            spec.protocol
+                ?: error("Protocol type requires 'protocol' config for schema '${spec.schema}'")
+        extractTypeFromProtocol(avroFile.readText(), spec.schema, protocol)
+    }
+}
+
+private fun findAvroFile(
+    spec: SubjectSpec,
+    fileCache: Map<String, File>,
+): File {
+    val fileName = spec.protocol ?: spec.schema
+    return fileCache["$fileName.$AVPR"]
+        ?: fileCache["$fileName.$AVSC"]
+        ?: error("File $fileName not found in configured search path(s)!")
 }
 
 fun String.toSubjectNameStrategy(): SubjectNameStrategy =
@@ -75,4 +97,24 @@ fun logStart(logger: Logger) {
         /_/ \_\_/|_| \___/   \_/\_/ |_/__\__,_|_| \__,_|
         """.trimIndent(),
     )
+}
+
+fun extractTypeFromProtocol(
+    avprText: String,
+    typeName: String,
+    protocolName: String,
+): String {
+    val mapper = ObjectMapper()
+    val root = mapper.readTree(avprText)
+    val types =
+        root.get("types")
+            ?: error("Protocol $protocolName has no 'types' array")
+    val typeNode =
+        types.firstOrNull { it.get("name")?.asText() == typeName }
+            ?: error("Type $typeName not found in protocol $protocolName")
+    val protocolNamespace = root.get("namespace")?.asText()
+    if (protocolNamespace != null && typeNode.get("namespace") == null) {
+        (typeNode as ObjectNode).put("namespace", protocolNamespace)
+    }
+    return mapper.writeValueAsString(typeNode)
 }

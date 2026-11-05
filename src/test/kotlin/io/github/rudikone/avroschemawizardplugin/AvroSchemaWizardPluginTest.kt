@@ -192,6 +192,51 @@ class AvroSchemaWizardPluginTest {
         assertNull(spec.protocol)
     }
 
+    @Test
+    fun `references are mapped from extension to REGISTER_TASK spec`() {
+        val project = projectWithPlugin()
+        val topic = "some_topic"
+        val schema = "some_schema"
+        val refName = "ru.rudikov.reference.SharedRecord"
+        val refSubject = "shared-value"
+        val refVersion = 3
+
+        extension(project).configs {
+            topic(topic) {
+                this.schema.set(schema)
+                references {
+                    reference {
+                        this.name.set(refName)
+                        this.subject.set(refSubject)
+                        this.version.set(refVersion)
+                    }
+                }
+            }
+        }
+
+        val spec = registerTask(project).subjectSpecs.get().single { it.topic == topic }
+        val reference = spec.references.single()
+        assertEquals(refName, reference.name)
+        assertEquals(refSubject, reference.subject)
+        assertEquals(refVersion, reference.version)
+    }
+
+    @Test
+    fun `empty references by default from extension to REGISTER_TASK spec`() {
+        val project = projectWithPlugin()
+        val topic = "some_topic"
+        val schema = "some_schema"
+
+        extension(project).configs {
+            topic(topic) {
+                this.schema.set(schema)
+            }
+        }
+
+        val spec = registerTask(project).subjectSpecs.get().single { it.topic == topic }
+        assertEquals(emptyList<SchemaReferenceSpec>(), spec.references)
+    }
+
     companion object {
         private const val PLUGIN_ID = "io.github.rudikone.avroschema-wizard-plugin"
     }

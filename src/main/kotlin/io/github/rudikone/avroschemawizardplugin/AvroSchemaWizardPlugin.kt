@@ -28,6 +28,14 @@ abstract class AvroSchemaWizardPlugin : Plugin<Project> {
                         protocol = cfg.protocol.orNull,
                         schema = cfg.schema.get(),
                         subjectNameStrategy = cfg.subjectNameStrategy.get(),
+                        references =
+                            cfg.references.get().map {
+                                SchemaReferenceSpec(
+                                    name = it.name.get(),
+                                    subject = it.subject.get(),
+                                    version = it.version.get(),
+                                )
+                            },
                     )
                 }
             }
